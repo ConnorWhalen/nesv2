@@ -1,0 +1,17 @@
+a_button: L
+b_button: K
+up_button: W
+down_button: S
+left_button: A
+right_button: D
+start_button: RETURN
+select_button: "'"
+
+cpu_type: CPU
+ppu_type: PPU
+apu_type: APU
+controllers_type: Controllers
+mapper_type: Mapper
+speakers_type: Speakers
+
+rom_file: Mega Man (USA).nes
