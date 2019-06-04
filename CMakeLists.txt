@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.6)
 project(nesv2)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 11)
 
 find_library(SDL2 SDL2)
 if (NOT SDL2)
