@@ -30,6 +30,8 @@ public:
     float fingers[FINGER_LIMIT*2];
 private:
     static bool Intersecting(TouchRect, float x, float y);
+    int GetFingerIndex(long finger_id);
+    void UpdateCurrent();
 
     InputData current = 0x00;
 
