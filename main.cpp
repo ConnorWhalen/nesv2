@@ -6,16 +6,21 @@
 #include "Config.h"
 #include "parts/APU.h"
 #include "RomParser.h"
-#include "UI/GameWindow.h"
-#include "UI/KeyboardInput.h"
+#include "UI/GameArea.h"
+#include "input/KeyboardInput.h"
+#include "UI/Button.h"
 #include "UI/TextWindow.h"
-#include "UI/TouchInput.h"
+#include "input/TouchInput.h"
 #include "PartAssembler.h"
 
 constexpr int TEXT_WINDOW_WIDTH = 500;
 constexpr int TEXT_WINDOW_HEIGHT = 700;
-constexpr int GAME_WINDOW_WIDTH = 512;
+constexpr int GAME_WINDOW_WIDTH = 800;
 constexpr int GAME_WINDOW_HEIGHT = 480;
+constexpr int GAME_WIDTH = 512;
+constexpr int GAME_HEIGHT = 480;
+constexpr int GAME_TOP = 0;
+constexpr int GAME_LEFT = 144;
 constexpr int NES_WIDTH = 256;
 constexpr int NES_HEIGHT = 240;
 constexpr int FPS = 60;
@@ -26,7 +31,7 @@ bool init();
 void close();
 
 TextWindow* textWindow;
-GameWindow* gameWindow;
+Window* gameWindow;
 
 bool init() {
     bool success = true;
@@ -78,15 +83,23 @@ int main(int argc, char *argv[]) {
             SDL_GetKeyFromName(config.Get("select_button").c_str())
     );
 
+    auto aButtonRect = WindowArea::ConstructSDLRect(72, 72, 728, 368);
+    auto bButtonRect = WindowArea::ConstructSDLRect(72, 72, 656, 368);
+    auto startButtonRect = WindowArea::ConstructSDLRect(72, 72, 728, 224);
+    auto selectButtonRect = WindowArea::ConstructSDLRect(72, 72, 656, 224);
+    auto upButtonRect = WindowArea::ConstructSDLRect(72, 72, 36, 260);
+    auto downButtonRect = WindowArea::ConstructSDLRect(72, 72, 36, 404);
+    auto leftButtonRect = WindowArea::ConstructSDLRect(72, 72, 0, 332);
+    auto rightButtonRect = WindowArea::ConstructSDLRect(72, 72, 72, 332);
     auto touchInput = new TouchInput(
-            {0,             0,             100.0f/480.0f, 100.0f/800.0f},
-            {0,             100.0f/800.0f, 100.0f/480.0f, 100.0f/800.0f},
-            {100.0f/480.0f, 0,             100.0f/480.0f, 100.0f/800.0f},
-            {100.0f/480.0f, 100.0f/800.0f, 100.0f/480.0f, 100.0f/800.0f},
-            {200.0f/480.0f, 0,             100.0f/480.0f, 100.0f/800.0f},
-            {200.0f/480.0f, 100.0f/800.0f, 100.0f/480.0f, 100.0f/800.0f},
-            {300.0f/480.0f, 0,             100.0f/480.0f, 100.0f/800.0f},
-            {300.0f/480.0f, 100.0f/800.0f, 100.0f/480.0f, 100.0f/800.0f}
+            TouchInput::SDLRectToTouchRect(aButtonRect, 800, 480),
+            TouchInput::SDLRectToTouchRect(bButtonRect, 800, 480),
+            TouchInput::SDLRectToTouchRect(upButtonRect, 800, 480),
+            TouchInput::SDLRectToTouchRect(downButtonRect, 800, 480),
+            TouchInput::SDLRectToTouchRect(leftButtonRect, 800, 480),
+            TouchInput::SDLRectToTouchRect(rightButtonRect, 800, 480),
+            TouchInput::SDLRectToTouchRect(startButtonRect, 800, 480),
+            TouchInput::SDLRectToTouchRect(selectButtonRect, 800, 480)
     );
 
     Input *inputs[] {keyboard, touchInput};
@@ -97,9 +110,9 @@ int main(int argc, char *argv[]) {
             config.Get("ppu_type"),
             config.Get("apu_type"),
             config.Get("controllers_type"),
-            config.Get("mapper_type"),
             config.Get("speakers_type"),
-            touchInput
+            touchInput,
+            romData
     );
 
     SDL_Color Red = {255, 80, 80};
@@ -108,22 +121,64 @@ int main(int argc, char *argv[]) {
         printf("Failed to initialize SDL. Exiting!\n");
         return -1;
     }
+
     textWindow = new TextWindow(TEXT_WINDOW_WIDTH, TEXT_WINDOW_HEIGHT);
-    gameWindow = new GameWindow(GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT);
+    gameWindow = new Window(GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT);
     Window *windows[] {textWindow, gameWindow};
+
+    auto aButton = new Button(aButtonRect, gameWindow->GetRenderer(),
+                              "sprites/onButton.png", "sprites/offButton.png",
+                              touchInput, A_BUTTON);
+    auto bButton = new Button(bButtonRect, gameWindow->GetRenderer(),
+                              "sprites/onButton.png", "sprites/offButton.png",
+                              touchInput, B_BUTTON);
+    auto startButton = new Button(startButtonRect, gameWindow->GetRenderer(),
+                                  "sprites/onButton.png", "sprites/offButton.png",
+                                  touchInput, START_BUTTON);
+    auto selectButton = new Button(selectButtonRect, gameWindow->GetRenderer(),
+                                   "sprites/onButton.png", "sprites/offButton.png",
+                                   touchInput, SELECT_BUTTON);
+    auto upButton = new Button(upButtonRect, gameWindow->GetRenderer(),
+                               "sprites/onButton.png", "sprites/offButton.png",
+                               touchInput, UP_BUTTON);
+    auto downButton = new Button(downButtonRect, gameWindow->GetRenderer(),
+                                 "sprites/onButton.png", "sprites/offButton.png",
+                                 touchInput, DOWN_BUTTON);
+    auto leftButton = new Button(leftButtonRect, gameWindow->GetRenderer(),
+                                 "sprites/onButton.png", "sprites/offButton.png",
+                                 touchInput, LEFT_BUTTON);
+    auto rightButton = new Button(rightButtonRect, gameWindow->GetRenderer(),
+                                  "sprites/onButton.png", "sprites/offButton.png",
+                                  touchInput, RIGHT_BUTTON);
+
+    auto gameRect = new SDL_Rect;
+    gameRect->w = GAME_WIDTH;
+    gameRect->h = GAME_HEIGHT;
+    gameRect->x = GAME_LEFT;
+    gameRect->y = GAME_TOP;
+    auto gameArea = new GameArea(gameRect, gameWindow->GetRenderer());
+    gameWindow->AddWindowArea(gameArea);
+    gameWindow->AddWindowArea(aButton);
+    gameWindow->AddWindowArea(bButton);
+    gameWindow->AddWindowArea(startButton);
+    gameWindow->AddWindowArea(selectButton);
+    gameWindow->AddWindowArea(upButton);
+    gameWindow->AddWindowArea(downButton);
+    gameWindow->AddWindowArea(leftButton);
+    gameWindow->AddWindowArea(rightButton);
 
     // Sample pixels
     Uint32 pixels[NES_WIDTH*NES_HEIGHT];
     for (int i = 0; i < NES_WIDTH*NES_HEIGHT; i++) pixels[i] = 0;
     Uint32 pixelFormatCode;
-    SDL_QueryTexture(gameWindow->GetTexture(), &pixelFormatCode, NULL, NULL, NULL);
+    SDL_QueryTexture(gameArea->GetTexture(), &pixelFormatCode, nullptr, nullptr, nullptr);
     SDL_PixelFormat *pixelFormat = SDL_AllocFormat(pixelFormatCode);
 
     bool quit = false;
     SDL_Event inputEvent;
     int now = SDL_GetTicks();
     int next_frame = now;
-    int frame_start = now;
+    int second_start = now;
     double fps;
     int fps_index = 0;
     double fps_buffer[FPS_BUFFER];
@@ -155,7 +210,7 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            gameWindow->Flip(pixels, NES_WIDTH, NES_HEIGHT);
+            gameArea->Flip(pixels, NES_WIDTH, NES_HEIGHT);
 
             textWindow->Clear();
             for (Part *part : *(parts->asVector)) {
@@ -194,14 +249,19 @@ int main(int argc, char *argv[]) {
                 fps_buffer[fps_index++] = now;
                 if (fps_index == FPS_BUFFER) fps_index = 0;
                 if (fps_index % FPS == 0) {
-                    frame_start += 1000;
+                    if (next_frame - now < -100) {
+                        second_start = now;
+                    } else {
+                        second_start = next_frame;
+                    }
                 }
-                next_frame = frame_start + (1000 * (fps_index % FPS)/FPS);
+                next_frame = second_start + (1000 * (fps_index % FPS)/FPS);
             }
 
-            textWindow->AddText("Frame Rate", Red);
+            textWindow->AddText("Frame Rate (Past 4s)", Red);
             textWindow->AddText(std::to_string(fps), White);
             for (Window *window : windows) {
+                window->Render();
                 window->Render();
             }
         }

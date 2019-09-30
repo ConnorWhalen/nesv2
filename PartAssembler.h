@@ -14,9 +14,10 @@
 #include "parts/PPU.h"
 #include "parts/APU.h"
 #include "parts/Controllers.h"
-#include "parts/Mapper.h"
+#include "parts/mappers/Mapper.h"
 #include "parts/Speakers.h"
-#include "UI/Input.h"
+#include "input/Input.h"
+#include "RomParser.h"
 
 struct Parts {
     CPU* cpu;
@@ -31,13 +32,13 @@ struct Parts {
 class PartAssembler {
 public:
     Parts* Assemble(
-            std::string cpuType,
-            std::string ppuType,
-            std::string apuType,
-            std::string controllersType,
-            std::string mapperType,
-            std::string speakersType,
-            Input *inputDevice
+            const std::string& cpuType,
+            const std::string& ppuType,
+            const std::string& apuType,
+            const std::string& controllersType,
+            const std::string& speakersType,
+            Input *inputDevice,
+            RomParser::RomData *romData
     );
 };
 

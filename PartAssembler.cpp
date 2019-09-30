@@ -6,14 +6,16 @@
 
 #include "PartAssembler.h"
 
+#include "parts/mappers/M0.h"
+
 Parts* PartAssembler::Assemble(
-        std::string cpuType,
-        std::string ppuType,
-        std::string apuType,
-        std::string controllersType,
-        std::string mapperType,
-        std::string speakersType,
-        Input *inputDevice
+        const std::string& cpuType,
+        const std::string& ppuType,
+        const std::string& apuType,
+        const std::string& controllersType,
+        const std::string& speakersType,
+        Input *inputDevice,
+        RomParser::RomData *romData
 ) {
     auto parts = new Parts {};
     if (cpuType == "CPU") {
@@ -36,21 +38,18 @@ Parts* PartAssembler::Assemble(
     } else {
         printf("unknown controllers type %s\n", controllersType.c_str());
     }
-    if (mapperType == "Mapper") {
-        parts->mapper = new Mapper();
+    if (romData->mapper == 0) {
+        parts->mapper = new M0(romData->romBytes);
+    } else if (romData->mapper == 2) {
+        parts->mapper = new M0(romData->romBytes);
     } else {
-        printf("unknown mapper type %s\n", mapperType.c_str());
+        printf("unknown mapper type %d\n", romData->mapper);
     }
     if (speakersType == "Speakers") {
         parts->speakers = new Speakers();
     } else {
         printf("unknown speakers type %s\n", speakersType.c_str());
     }
-    parts->ppu = new PPU();
-    parts->apu = new APU();
-    parts->controllers = new Controllers(inputDevice);
-    parts->mapper = new Mapper();
-    parts->speakers = new Speakers();
     parts->asVector = new std::vector<Part*> {
             parts->cpu,
             parts->ppu,

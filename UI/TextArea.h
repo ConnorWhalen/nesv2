@@ -13,24 +13,30 @@
 #include <SDL2/SDL.h>
 #include <SDL2_ttf/SDL_ttf.h>
 
+#include "WindowArea.h"
+
 constexpr int FONT_SIZE = 24;
 
-class TextArea {
+class TextArea : public WindowArea {
 public:
-    TextArea();
+    TextArea(int width, int height);
     void AddText(const std::string &text, const SDL_Color &color, SDL_Renderer* renderer);
     void NewLine();
     void Offset(const int &offsetX, const int &offsetY);
-    void Render(SDL_Renderer* renderer);
+    void Render(SDL_Renderer* renderer) override;
     void Clear();
 private:
-    std::vector<SDL_Texture*>* messages;
-    std::vector<SDL_Rect>* rects;
+    int windowWidth;
+    int windowHeight;
+    std::vector<SDL_Texture*>* oldMessages;
+    std::vector<SDL_Rect>* oldRects;
+    std::vector<std::string>* lines;
     int lineTop;
     int lineLeft;
     int lineBottom;
     int offsetX;
     int offsetY;
+    int messageIndex;
     TTF_Font* font;
 };
 

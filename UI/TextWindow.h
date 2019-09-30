@@ -18,9 +18,9 @@ public:
     void NewLine();
     void Offset(const int &x, const int &y);
     void Clear();
-protected:
-    void RenderChild() override;
 private:
+    Window InitializeWithTextArea(int width, int height);
+
     TextArea* textArea;
 };
 

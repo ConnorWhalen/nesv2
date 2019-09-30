@@ -20,6 +20,10 @@ struct TouchRect {
 
 class TouchInput : public Input {
 public:
+    static TouchRect SDLRectToTouchRect(SDL_Rect* sdl, int width, int height) {
+        return TouchRect {(float) sdl->y/height, (float) sdl->x/width, (float) sdl->h/height, (float) sdl->w/width};
+    }
+
     TouchInput(TouchRect rect_for_a, TouchRect rect_for_b, TouchRect rect_for_up, TouchRect rect_for_down,
                TouchRect rect_for_left, TouchRect rect_for_right, TouchRect rect_for_start,
                TouchRect rect_for_select);
@@ -30,7 +34,7 @@ public:
     float fingers[FINGER_LIMIT*2];
 private:
     static bool Intersecting(TouchRect, float x, float y);
-    int GetFingerIndex(long finger_id);
+    int GetFingerIndex(long finger_id, float x, float y);
     void UpdateCurrent();
 
     InputData current = 0x00;

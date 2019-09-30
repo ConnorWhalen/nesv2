@@ -7,12 +7,7 @@
 #include "TextWindow.h"
 
 TextWindow::TextWindow(int width, int height)
-    : Window(width, height) {
-    this->textArea = new TextArea();
-}
-
-void TextWindow::RenderChild() {
-    textArea->Render(renderer);
+    : Window(InitializeWithTextArea(width, height)){
 }
 
 void TextWindow::AddText(const std::string &text, const SDL_Color &color) {
@@ -30,4 +25,12 @@ void TextWindow::Offset(const int &x, const int &y) {
 void TextWindow::Clear() {
     textArea->Clear();
 }
+
+Window TextWindow::InitializeWithTextArea(int width, int height) {
+    this->textArea = new TextArea(width, height);
+    auto textAreaVector = new std::vector<WindowArea*>();
+    textAreaVector->push_back(this->textArea);
+    return Window(width, height, textAreaVector);
+}
+
 

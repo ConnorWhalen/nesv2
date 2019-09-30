@@ -7,9 +7,13 @@
 #ifndef NESV2_PART_H
 #define NESV2_PART_H
 
+#include <ostream>
 #include <string>
 
 #include "OutputData.h"
+
+typedef unsigned char nes_byte;
+typedef unsigned short nes_address;
 
 class Part {
 public:

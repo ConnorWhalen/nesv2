@@ -1,5 +1,5 @@
 //
-// NES-V2: GameWindow.h
+// NES-V2: GameArea.h
 //
 // Created by Connor Whalen on 2019-05-20.
 //
@@ -7,18 +7,20 @@
 #ifndef NESV2_GAMEWINDOW_H
 #define NESV2_GAMEWINDOW_H
 
-#include "Window.h"
+#include "WindowArea.h"
 
-class GameWindow : public Window {
+class GameArea : public WindowArea {
 public:
-    GameWindow(int width, int height);
+    GameArea(SDL_Rect* gamerect, SDL_Renderer* renderer);
     void Flip(const Uint32 gamePixels[], int gameWidth, int gameHeight);
 
     SDL_Texture *GetTexture();
 protected:
-    void RenderChild() override;
+    void Render(SDL_Renderer* renderer) override;
 private:
     SDL_Texture* gameTexture;
+    SDL_Rect* gameRect;
+    SDL_Rect* renderRect;
     Uint32 *pixels;
 };
 

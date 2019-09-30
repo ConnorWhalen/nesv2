@@ -58,11 +58,6 @@ RomData *parse(const std::string &filename) {
         // TODO: NES1 spec header
     }
 
-    if (mapper != 2 && mapper != 0) {
-        std::cout << "Mapper " << mapper << " has not been implemented. Exiting";
-        return nullptr;
-    }
-
     auto cartRAM = new unsigned char[0x2000];
     auto romBytes = new std::vector<unsigned char>();
     while (inFile.get(inChar)) {

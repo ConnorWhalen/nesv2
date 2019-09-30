@@ -30,10 +30,14 @@ InputData TouchInput::Read() {
     return this->current;
 }
 
-int TouchInput::GetFingerIndex(const long finger_id) {
+int TouchInput::GetFingerIndex(const long finger_id, float x, float y) {
     int index_to_use = -1;
     for (int i = 0; i < 10; i++) {
-        if (finger_id_map[i] == finger_id) {
+        if (finger_id_map[i] == finger_id ||
+                (x-fingers[i*2] < 0.05 &&
+                 x-fingers[i*2] > -0.05 &&
+                 y-fingers[i*2+1] < 0.05 &&
+                 y-fingers[i*2+1] > -0.05)) {
             index_to_use = i;
         }
     }
@@ -69,7 +73,7 @@ void TouchInput::UpdateCurrent() {
 }
 
 void TouchInput::Apply(const SDL_Event e) {
-    int index_to_use = this->GetFingerIndex(e.tfinger.fingerId);
+    int index_to_use = this->GetFingerIndex(e.tfinger.fingerId, e.tfinger.x, e.tfinger.y);
     if (e.type == SDL_FINGERDOWN) {
         fingers[index_to_use*2] = e.tfinger.x;
         fingers[index_to_use*2+1] = e.tfinger.y;

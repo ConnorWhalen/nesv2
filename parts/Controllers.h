@@ -9,7 +9,7 @@
 
 #include "OutputData.h"
 #include "Part.h"
-#include "../UI/Input.h"
+#include "../input/Input.h"
 
 class Controllers : public Part {
 public:
