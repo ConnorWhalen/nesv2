@@ -42,7 +42,7 @@ Parts* PartAssembler::Assemble(
     if (romData->mapper == 0) {
         parts->mapper = new M0(romData->romBytes);
     } else if (romData->mapper == 2) {
-        parts->mapper = new M0(romData->romBytes);
+        parts->mapper = new M2(romData->romBytes);
     } else {
         printf("unknown mapper type %d\n", romData->mapper);
     }
