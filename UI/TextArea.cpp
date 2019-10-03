@@ -11,8 +11,8 @@
 TextArea::TextArea(int width, int height) {
     this->windowWidth = width;
     this->windowHeight = height;
-    this->oldMessages = new std::vector<SDL_Texture*>();
-    this->oldRects = new std::vector<SDL_Rect>();
+    this->messages = new std::vector<SDL_Texture*>();
+    this->rects = new std::vector<SDL_Rect>();
     this->lines = new std::vector<std::string>();
     this->lineTop = 0;
     this->lineLeft = 0;
@@ -35,6 +35,7 @@ void TextArea::AddText(const std::string &text, const SDL_Color &color, SDL_Rend
     std::stringstream stream(text);
     std::string line;
     while (std::getline(stream, line)) {
+        // first iteration
         if (messageIndex == lines->size()) {
             SDL_Surface *surfaceMessage = TTF_RenderText_Solid(font, line.c_str(), color);
 
@@ -48,19 +49,20 @@ void TextArea::AddText(const std::string &text, const SDL_Color &color, SDL_Rend
             }
             lineLeft = lineLeft + surfaceMessage->w;
 
-            oldRects->push_back(rect);
+            rects->push_back(rect);
             auto message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
-            oldMessages->push_back(message);
+            messages->push_back(message);
             lines->push_back(line);
 
             SDL_FreeSurface(surfaceMessage);
+        // subsequent iterations
         } else if (line != (*lines)[messageIndex]) {
             SDL_Surface *surfaceMessage = TTF_RenderText_Solid(font, line.c_str(), color);
 
-            (*oldRects)[messageIndex].w = surfaceMessage->w;
+            (*rects)[messageIndex].w = surfaceMessage->w;
 
             auto message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
-            (*oldMessages)[messageIndex] = message;
+            (*messages)[messageIndex] = message;
             (*lines)[messageIndex] = line;
 
             SDL_FreeSurface(surfaceMessage);
@@ -76,8 +78,9 @@ void TextArea::NewLine() {
 }
 
 void TextArea::Offset(const int &offsetX, const int &offsetY) {
-//    this->offsetX += offsetX *2;
-    this->offsetY += offsetY *20;
+//  disable x scroll
+//    this->offsetX += offsetX * SCROLL_SPEED;
+    this->offsetY += offsetY * SCROLL_SPEED;
     if (this->offsetX > 0) {
         this->offsetX = 0;
     }
@@ -88,14 +91,14 @@ void TextArea::Offset(const int &offsetX, const int &offsetY) {
 
 void TextArea::Render(SDL_Renderer* renderer) {
     SDL_RenderClear(renderer);
-    for (int i = 0; i < oldMessages->size(); i++) {
-        if ((*oldRects)[i].y+offsetY >= 0 &&
-                (*oldRects)[i].y+(*oldRects)[i].h+offsetY < windowHeight*2) {
-            SDL_Rect offsetRect = oldRects->at(i);
+    for (int i = 0; i < messages->size(); i++) {
+        if ((*rects)[i].y+offsetY >= 0 &&
+                (*rects)[i].y+(*rects)[i].h+offsetY < windowHeight*2) {
+            SDL_Rect offsetRect = rects->at(i);
             offsetRect.x += offsetX;
             offsetRect.y += offsetY;
-            SDL_RenderCopy(renderer, oldMessages->at(i), nullptr, &offsetRect);
-            SDL_RenderCopy(renderer, oldMessages->at(i), nullptr, &offsetRect);
+            SDL_RenderCopy(renderer, messages->at(i), nullptr, &offsetRect);
+            SDL_RenderCopy(renderer, messages->at(i), nullptr, &offsetRect);
         }
     }
 }

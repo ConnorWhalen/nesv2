@@ -16,6 +16,7 @@
 #include "WindowArea.h"
 
 constexpr int FONT_SIZE = 24;
+constexpr int SCROLL_SPEED = 20;
 
 class TextArea : public WindowArea {
 public:
@@ -28,8 +29,8 @@ public:
 private:
     int windowWidth;
     int windowHeight;
-    std::vector<SDL_Texture*>* oldMessages;
-    std::vector<SDL_Rect>* oldRects;
+    std::vector<SDL_Texture*>* messages;
+    std::vector<SDL_Rect>* rects;
     std::vector<std::string>* lines;
     int lineTop;
     int lineLeft;

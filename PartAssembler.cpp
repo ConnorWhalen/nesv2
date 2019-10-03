@@ -7,6 +7,7 @@
 #include "PartAssembler.h"
 
 #include "parts/mappers/M0.h"
+#include "parts/mappers/M2.h"
 
 Parts* PartAssembler::Assemble(
         const std::string& cpuType,

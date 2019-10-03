@@ -10,12 +10,19 @@
 #include "../OutputData.h"
 #include "../Part.h"
 
+constexpr nes_address MAPPER_REGION_START = 0x8000;
+constexpr nes_address MAPPER_REGION_MIDDLE = 0xC000;
+
 class Mapper : public Part {
 public:
-    virtual std::vector<OutputData>* Serialize() override {
+    std::vector<OutputData>* Serialize() override {
         return new std::vector<OutputData>();
     };
-    virtual nes_byte Read(nes_address address) = 0;
+    nes_byte Read(nes_address address);
+    void Write(nes_address address, nes_byte value);
+protected:
+    virtual nes_byte DoRead(nes_address address) = 0;
+    virtual void DoWrite(nes_address address, nes_byte value) = 0;
 };
 
 #endif //NESV2_MAPPER_H

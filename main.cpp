@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
                     if (next_frame - now < -100) {
                         second_start = now;
                     } else {
-                        second_start = next_frame;
+                        second_start += 1000;
                     }
                 }
                 next_frame = second_start + (1000 * (fps_index % FPS)/FPS);
