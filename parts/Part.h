@@ -15,6 +15,11 @@
 typedef unsigned char nes_byte;
 typedef unsigned short nes_address;
 
+constexpr int CLOCK_FREQUENCY = 21441960;
+constexpr int FPS = 60;
+constexpr int NES_WIDTH = 256;
+constexpr int NES_HEIGHT = 240;
+
 class Part {
 public:
     virtual std::vector<OutputData>* Serialize() {

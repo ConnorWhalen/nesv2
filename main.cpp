@@ -21,9 +21,6 @@ constexpr int GAME_WIDTH = 512;
 constexpr int GAME_HEIGHT = 480;
 constexpr int GAME_TOP = 0;
 constexpr int GAME_LEFT = 144;
-constexpr int NES_WIDTH = 256;
-constexpr int NES_HEIGHT = 240;
-constexpr int FPS = 60;
 constexpr int FPS_BUFFER = FPS*4;
 
 bool init();
@@ -208,6 +205,10 @@ int main(int argc, char *argv[]) {
                             (Uint8)((double)fps_index*offset),
                             (Uint8)((double)fps_index*offset));
                 }
+            }
+
+            for (Part *part : *(parts->asVector)) {
+                part->Tick();
             }
 
             gameArea->Flip(pixels, NES_WIDTH, NES_HEIGHT);

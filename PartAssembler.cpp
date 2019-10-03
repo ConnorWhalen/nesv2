@@ -19,8 +19,15 @@ Parts* PartAssembler::Assemble(
         RomParser::RomData *romData
 ) {
     auto parts = new Parts {};
+    if (romData->mapper == 0) {
+        parts->mapper = new M0(romData->romBytes);
+    } else if (romData->mapper == 2) {
+        parts->mapper = new M2(romData->romBytes);
+    } else {
+        printf("unknown mapper type %d\n", romData->mapper);
+    }
     if (cpuType == "CPU") {
-        parts->cpu = new CPU();
+        parts->cpu = new CPU(parts->mapper);
     } else {
         printf("unknown cpu type %s\n", cpuType.c_str());
     }
@@ -38,13 +45,6 @@ Parts* PartAssembler::Assemble(
         parts->controllers = new Controllers(inputDevice);
     } else {
         printf("unknown controllers type %s\n", controllersType.c_str());
-    }
-    if (romData->mapper == 0) {
-        parts->mapper = new M0(romData->romBytes);
-    } else if (romData->mapper == 2) {
-        parts->mapper = new M2(romData->romBytes);
-    } else {
-        printf("unknown mapper type %d\n", romData->mapper);
     }
     if (speakersType == "Speakers") {
         parts->speakers = new Speakers();

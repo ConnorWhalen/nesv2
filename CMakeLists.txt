@@ -28,7 +28,7 @@ add_executable(nesv2 main.cpp RomParser.cpp RomParser.h UI/TextArea.cpp UI/TextA
         parts/Speakers.h PartAssembler.h PartAssembler.cpp input/KeyboardInput.h input/KeyboardInput.cpp input/Input.h
         parts/Controllers.cpp Config.cpp Config.h UI/Window.cpp UI/Window.h UI/GameArea.cpp UI/GameArea.h
         input/TouchInput.cpp input/TouchInput.h UI/WindowArea.h UI/Button.cpp UI/Button.h parts/mappers/M0.cpp
-        parts/mappers/M0.h parts/mappers/M2.cpp parts/mappers/M2.h parts/mappers/Mapper.cpp)
+        parts/mappers/M0.h parts/mappers/M2.cpp parts/mappers/M2.h parts/mappers/Mapper.cpp parts/CPU.cpp)
 
 message("${SDL2}")
 message("${SDL_TTF}")
