@@ -27,12 +27,33 @@ constexpr nes_address DISABLED_REGION_END = 0x4020;
 constexpr nes_address UNUSED_CARTRIDGE_REGION_END = 0x8000;
 
 enum class CPU_ADDRESSING_MODE {
-    ZERO_PAGE_X = 0,
-    ZERO_PAGE_Y = 1,
-    ABSOLUTE_X = 2,
-    ABSOLUTE_Y = 3,
-    INDIRECT_X = 4,
-    INDIRECT_Y = 5,
+    ZERO_PAGE_X,
+    ZERO_PAGE_Y,
+    ABSOLUTE_X,
+    ABSOLUTE_Y,
+    INDIRECT_X,
+    INDIRECT_Y,
+    ZERO_PAGE,
+    IMMEDIATE,
+    ABSOLUTE,
+    INDIRECT,
+    ACCUMULATOR,
+    IMPLICIT,
+    RELATIVE,
+};
+
+// "Oops" cycle cases. Situations where an instruction's result affects its timing
+enum class OOPS {
+    NONE,
+    ADD_IF_PAGE_CROSSED,
+    BRANCH_INSTRUCTION,
+};
+
+enum class OPCODE {
+    ADC, AND, ASL, BCC, BCS, BEQ, BIT, BMI, BNE, BPL, BRK, BVC, BVS, CLC,
+    CLD, CLI, CLV, CMP, CPX, CPY, DEC, DEX, DEY, EOR, INC, INX, INY, JMP,
+    JSR, LDA, LDX, LDY, LSR, NOP, ORA, PHA, PHP, PLA, PLP, ROL, ROR, RTI,
+    RTS, SBC, SEC, SED, SEI, STA, STX, STY, TAX, TAY, TSX, TXA, TXS, TYA,
 };
 
 class CPU : public Part {
@@ -44,6 +65,8 @@ private:
     nes_byte MemoryRead(nes_address address);
     void MemoryWrite(nes_address address, nes_byte value);
     nes_address GetAddress(CPU_ADDRESSING_MODE mode, nes_address argument);
+    void Instruction(nes_byte opcode);
+    void Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops);
 
     nes_byte A;
     nes_byte X;
@@ -53,6 +76,7 @@ private:
     nes_address PC;
     Mapper* mapper;
     nes_byte RAM[RAM_SIZE];
+    int wait_steps;
 };
 
 #endif //NESV2_CPU_H
