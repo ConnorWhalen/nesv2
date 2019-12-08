@@ -1086,8 +1086,8 @@ void CPU::JMP(nes_address address) {
 }
 
 void CPU::JSR(nes_address address) {
-    StackPush((nes_byte) (PC >> 8));
-    StackPush((nes_byte) PC);
+    StackPush((nes_byte) ((PC-1) >> 8));
+    StackPush((nes_byte) (PC-1));
     PC = address;
 }
 
@@ -1165,6 +1165,7 @@ void CPU::Return(bool is_interrupt) {
     nes_byte lower = StackPull();
     nes_byte upper = StackPull();
     PC = lower + ((nes_address) upper << 8);
+    if (!is_interrupt) PC++;
 }
 
 void CPU::SBC(nes_byte argument) {

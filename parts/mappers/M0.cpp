@@ -13,12 +13,12 @@ M0::M0(std::vector<unsigned char> *romBytes) {
     for (int i = 0; i < MAPPER0_SIZE; i++) {
         bytes[i] = (*romBytes)[i];
     }
-    int cols = 16;
-    int rows = MAPPER0_SIZE/cols/16;
+    int cols = 32;
+    int rows = MAPPER0_SIZE/cols/32;
     std::stringstream stream;
     stream << std::hex;
     for (int i = 0; i < rows; i++) {
-        stream << std::setw(4) << std::setfill('0') << (int) i*cols << " ";
+        stream << std::setw(4) << std::setfill('0') << i*cols << ": ";
         for (int j = 0; j < cols; j++) {
             stream << std::setw(2) << std::setfill('0') << (int) bytes[i*cols+j] << " ";
         }
