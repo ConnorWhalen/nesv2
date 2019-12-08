@@ -34,6 +34,12 @@ constexpr nes_byte OVERFLOW_FLAG = 0x40;
 constexpr nes_byte NEGATIVE_FLAG = 0x80;
 constexpr nes_byte B_FLAG = 0x30;
 
+constexpr nes_byte INITIAL_A = 0x00;
+constexpr nes_byte INITIAL_X = 0x00;
+constexpr nes_byte INITIAL_Y = 0x00;
+constexpr nes_byte INITIAL_S = 0xFD;
+constexpr nes_byte INITIAL_P = 0x34;
+
 enum class CPU_ADDRESSING_MODE {
     ZERO_PAGE_X,
     ZERO_PAGE_Y,
@@ -69,6 +75,7 @@ public:
     CPU(Mapper* mapper);
     std::vector<OutputData>* Serialize() override;
     void Step() override;
+    void Reset();
 private:
     nes_byte MemoryRead(nes_address address);
     void MemoryWrite(nes_address address, nes_byte value);

@@ -37,8 +37,8 @@ nes_byte M2::DoRead(nes_address address) {
 
 void M2::DoWrite(nes_address address, nes_byte value) {
     if (address > 7) {
-        printf("WARNING: WROTE TO MAPPER 2: Addr %d Value %d\n", address, value);
-        printf("TAKING MODULUS %d\n", value%8);
+        printf("WARNING: WROTE TO MAPPER 2: Addr %x Value %x\n", address, value);
+        printf("TAKING MODULUS %x\n", value%8);
     }
     this->bank = value%8;
 }

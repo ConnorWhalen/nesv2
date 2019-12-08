@@ -13,7 +13,7 @@
 #include "input/TouchInput.h"
 #include "PartAssembler.h"
 
-constexpr int TEXT_WINDOW_WIDTH = 500;
+constexpr int TEXT_WINDOW_WIDTH = 1000;
 constexpr int TEXT_WINDOW_HEIGHT = 700;
 constexpr int GAME_WINDOW_WIDTH = 800;
 constexpr int GAME_WINDOW_HEIGHT = 480;

@@ -38,11 +38,11 @@ std::vector<OutputData>* M0::Serialize() {
 
 nes_byte M0::DoRead(nes_address address) {
     if (address < MAPPER0_SIZE) {
-        printf("ERROR: INVALID MAPPER READ ADDRESS %d\n", address);
+        printf("ERROR: INVALID MAPPER READ ADDRESS %x\n", address);
     }
     return bytes[address-MAPPER0_SIZE];
 }
 
 void M0::DoWrite(nes_address address, nes_byte value) {
-    printf("WARNING: WROTE TO MAPPER 0: Addr %d Value %d\n", address, value);
+    printf("WARNING: WROTE TO MAPPER 0: Addr %x Value %x\n", address, value);
 }

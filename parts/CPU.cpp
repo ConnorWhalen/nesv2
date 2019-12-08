@@ -6,29 +6,58 @@
 
 #include "CPU.h"
 
+#include <iomanip>
+#include <sstream>
+
 CPU::CPU(Mapper* mapper) {
     this->mapper = mapper;
     // http://wiki.nesdev.com/w/index.php/CPU
     this->STEPS_PER_TICK = (CLOCK_FREQUENCY/12)/FPS;
     // http://wiki.nesdev.com/w/index.php/CPU_power_up_state
+    this->Reset();
+}
+
+std::vector<OutputData>* CPU::Serialize() {
+    std::stringstream registerStream;
+    registerStream << std::setfill('0') << std::setw(2) << std::hex << int(A) << " "
+                   << std::setfill('0') << std::setw(2) << std::hex << int(X) << " "
+                   << std::setfill('0') << std::setw(2) << std::hex << int(Y) << " "
+                   << std::setfill('0') << std::setw(2) << std::hex << int(S) << " "
+                   << std::setfill('0') << std::setw(2) << std::hex << int(P) << " "
+                   << std::setfill('0') << std::setw(4) << std::hex << int(PC);
+
+    std::stringstream ramStream;
+    int ram_line_width = 0x20;
+    int ram_lines = RAM_SIZE/ram_line_width;
+    for (int i = 0; i < ram_lines; i++) {
+        ramStream << std::setfill('0') << std::setw(4) << std::hex << i*ram_line_width << ": ";
+        for (int j = 0; j < ram_line_width; j++) {
+            ramStream << std::setfill('0') << std::setw(2) << std::hex << int(RAM[i*ram_line_width + j]) << " ";
+        }
+        ramStream << "\n";
+    }
+
+    return new std::vector<OutputData> {
+            {"A  X  Y  S  P  PC", registerStream.str()},
+            {"RAM DUMP", ramStream.str()}
+    };
+};
+
+void CPU::Step() {
+    if (--this->wait_steps < 1) {
+        nes_byte opcode = MemoryRead(PC++);
+        Instruction(opcode);
+    }
+}
+
+void CPU::Reset() {
     this->A = 0;
     this->X = 0;
     this->Y = 0;
     this->S = 0xFD;
     this->P = 0x34;
     this->PC = (this->MemoryRead(RESET_VECTOR_HIGH) << 8) + this->MemoryRead(RESET_VECTOR_LOW);
-    this->wait_steps = 0;
-}
-
-std::vector<OutputData>* CPU::Serialize() {
-    auto out = new std::vector<OutputData>();
-    return out;
-};
-
-void CPU::Step() {
-    if (--this->wait_steps < 1) {
-        Instruction(MemoryRead(++PC));
-    }
+    this->wait_steps = 1;
 }
 
 nes_byte CPU::MemoryRead(nes_address address) {
@@ -39,11 +68,11 @@ nes_byte CPU::MemoryRead(nes_address address) {
     } else if (address < APU_REGISTERS_END) {
         return 0; // TODO: APU read
     } else if (address < DISABLED_REGION_END) {
-        printf("WARNING: READ FROM DISABLED REGION ADDRESS %d\n", address);
+        printf("WARNING: READ FROM DISABLED REGION ADDRESS %x\n", address);
         return 0;
     } else if (address < UNUSED_CARTRIDGE_REGION_END) {
         // TODO: Unused cartridge region
-        printf("WARNING: READ FROM UNUSED CARTRIDGE REGION ADDRESS %d\n", address);
+        printf("WARNING: READ FROM UNUSED CARTRIDGE REGION ADDRESS %x\n", address);
         return 0;
     } else {
         return mapper->Read(address);
@@ -58,10 +87,10 @@ void CPU::MemoryWrite(nes_address address, nes_byte value) {
     } else if (address < APU_REGISTERS_END) {
         // TODO: APU read
     } else if (address < DISABLED_REGION_END) {
-        printf("WARNING: WRITE TO DISABLED REGION ADDRESS %d VALUE %d\n", address, value);
+        printf("WARNING: WRITE TO DISABLED REGION ADDRESS %x VALUE %x\n", address, value);
     } else if (address < UNUSED_CARTRIDGE_REGION_END) {
         // TODO: Unused cartridge region
-        printf("WARNING: WRITE TO UNUSED CARTRIDGE REGION ADDRESS %d VALUE %d\n", address, value);
+        printf("WARNING: WRITE TO UNUSED CARTRIDGE REGION ADDRESS %x VALUE %x\n", address, value);
     } else {
         return mapper->Write(address, value);
     }
@@ -78,7 +107,7 @@ void CPU::Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops)
             break;
         case CPU_ADDRESSING_MODE::IMMEDIATE:
         case CPU_ADDRESSING_MODE::RELATIVE:
-            argument = MemoryRead(++PC);
+            argument = MemoryRead(PC++);
             break;
         case CPU_ADDRESSING_MODE::ACCUMULATOR:
             argument = A;
@@ -89,14 +118,14 @@ void CPU::Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops)
         case CPU_ADDRESSING_MODE::INDIRECT:
         case CPU_ADDRESSING_MODE::INDIRECT_X:
         case CPU_ADDRESSING_MODE::INDIRECT_Y:
-            address = GetAddress(addressing_mode, MemoryRead(++PC), page_crossed);
+            address = GetAddress(addressing_mode, MemoryRead(PC++), page_crossed);
             argument = MemoryRead(address);
             break;
         case CPU_ADDRESSING_MODE::ABSOLUTE:
         case CPU_ADDRESSING_MODE::ABSOLUTE_X:
         case CPU_ADDRESSING_MODE::ABSOLUTE_Y:
-            address_argument = MemoryRead(++PC);
-            address_argument += (MemoryRead(++PC) << 8);
+            address_argument = MemoryRead(PC++);
+            address_argument += (MemoryRead(PC++) << 8);
             address = GetAddress(addressing_mode, address_argument, page_crossed);
             argument = MemoryRead(address);
             break;
@@ -868,7 +897,7 @@ void CPU::Instruction(nes_byte opcode) {
             Execute(OPCODE::TYA, CPU_ADDRESSING_MODE::IMPLICIT, OOPS::NONE);
             break;
         default:
-            printf("ERROR: ILLEGAL OPCODE %d\n", opcode);
+            printf("ERROR: ILLEGAL OPCODE %x\n", opcode);
             break;
     }
 }
