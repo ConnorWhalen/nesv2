@@ -13,7 +13,7 @@
 
 class Controllers : public Part {
 public:
-    Controllers(Input *input);
+    explicit Controllers(Input *input);
     std::vector<OutputData>* Serialize() override;
 private:
     Input *input;

@@ -62,6 +62,7 @@ void TextArea::AddText(const std::string &text, const SDL_Color &color, SDL_Rend
             (*rects)[messageIndex].w = surfaceMessage->w;
 
             auto message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+            SDL_DestroyTexture((*messages)[messageIndex]);
             (*messages)[messageIndex] = message;
             (*lines)[messageIndex] = line;
 

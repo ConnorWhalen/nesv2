@@ -215,10 +215,12 @@ int main(int argc, char *argv[]) {
 
             textWindow->Clear();
             for (Part *part : *(parts->asVector)) {
-                for (const OutputData &output : *(part->Serialize())) {
+                const std::vector<OutputData>* outputs = part->Serialize();
+                for (const OutputData &output : *(outputs)) {
                     textWindow->AddText(output.title, Red);
                     textWindow->AddText(output.body, White);
                 }
+                delete outputs;
             }
             textWindow->AddText("ROM Data", Red);
             textWindow->AddText(RomParser::serialize(romData), White);
