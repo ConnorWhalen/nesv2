@@ -39,3 +39,5 @@ target_link_libraries(nesv2 ${SDL_TTF})
 target_link_libraries(nesv2 ${SDL_IMAGE})
 target_link_libraries(nesv2 ${YAML_CPP})
 include_directories(/usr/local/include)
+
+add_subdirectory(catch_test)

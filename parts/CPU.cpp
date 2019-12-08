@@ -7,6 +7,7 @@
 #include "CPU.h"
 
 CPU::CPU(Mapper* mapper) {
+    this->mapper = mapper;
     // http://wiki.nesdev.com/w/index.php/CPU
     this->STEPS_PER_TICK = (CLOCK_FREQUENCY/12)/FPS;
     // http://wiki.nesdev.com/w/index.php/CPU_power_up_state
@@ -16,12 +17,12 @@ CPU::CPU(Mapper* mapper) {
     this->S = 0xFD;
     this->P = 0x34;
     this->PC = (this->MemoryRead(RESET_VECTOR_HIGH) << 8) + this->MemoryRead(RESET_VECTOR_LOW);
-    this->mapper = mapper;
     this->wait_steps = 0;
 }
 
 std::vector<OutputData>* CPU::Serialize() {
-    return new std::vector<OutputData>();
+    auto out = new std::vector<OutputData>();
+    return out;
 };
 
 void CPU::Step() {
@@ -67,11 +68,212 @@ void CPU::MemoryWrite(nes_address address, nes_byte value) {
 }
 
 void CPU::Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops) {
-    // TODO: Actually execute instruction
-
-    // TODO: replace dummy values with actual values
-    bool branch_succeeded = false;
     bool page_crossed = false;
+    nes_byte argument;
+    nes_address address_argument;
+    nes_address address;
+    switch (addressing_mode) {
+        case CPU_ADDRESSING_MODE::IMPLICIT:
+            argument = 0;
+            break;
+        case CPU_ADDRESSING_MODE::IMMEDIATE:
+        case CPU_ADDRESSING_MODE::RELATIVE:
+            argument = MemoryRead(++PC);
+            break;
+        case CPU_ADDRESSING_MODE::ACCUMULATOR:
+            argument = A;
+            break;
+        case CPU_ADDRESSING_MODE::ZERO_PAGE:
+        case CPU_ADDRESSING_MODE::ZERO_PAGE_X:
+        case CPU_ADDRESSING_MODE::ZERO_PAGE_Y:
+        case CPU_ADDRESSING_MODE::INDIRECT:
+        case CPU_ADDRESSING_MODE::INDIRECT_X:
+        case CPU_ADDRESSING_MODE::INDIRECT_Y:
+            address = GetAddress(addressing_mode, MemoryRead(++PC), page_crossed);
+            argument = MemoryRead(address);
+            break;
+        case CPU_ADDRESSING_MODE::ABSOLUTE:
+        case CPU_ADDRESSING_MODE::ABSOLUTE_X:
+        case CPU_ADDRESSING_MODE::ABSOLUTE_Y:
+            address_argument = MemoryRead(++PC);
+            address_argument += (MemoryRead(++PC) << 8);
+            address = GetAddress(addressing_mode, address_argument, page_crossed);
+            argument = MemoryRead(address);
+            break;
+    }
+
+    bool branch_succeeded = false;
+    switch (opcode) {
+        case OPCODE::ADC:
+            ADC(argument);
+            break;
+        case OPCODE::AND:
+            AND(argument);
+            break;
+        case OPCODE::ASL:
+            ASL(argument, address, addressing_mode);
+            break;
+        case OPCODE::BCC:
+            Branch(argument, !(P & CARRY_FLAG), branch_succeeded);
+            break;
+        case OPCODE::BCS:
+            Branch(argument, (P & CARRY_FLAG), branch_succeeded);
+            break;
+        case OPCODE::BEQ:
+            Branch(argument, (P & ZERO_FLAG), branch_succeeded);
+            break;
+        case OPCODE::BIT:
+            BIT(argument);
+            break;
+        case OPCODE::BMI:
+            Branch(argument, (P & NEGATIVE_FLAG), branch_succeeded);
+            break;
+        case OPCODE::BNE:
+            Branch(argument, !(P & ZERO_FLAG), branch_succeeded);
+            break;
+        case OPCODE::BPL:
+            Branch(argument, !(P & NEGATIVE_FLAG), branch_succeeded);
+            break;
+        case OPCODE::BRK:
+            BRK(argument);
+            break;
+        case OPCODE::BVC:
+            Branch(argument, !(P & OVERFLOW_FLAG), branch_succeeded);
+            break;
+        case OPCODE::BVS:
+            Branch(argument, (P & OVERFLOW_FLAG), branch_succeeded);
+            break;
+        case OPCODE::CLC:
+            ClearFlag(CARRY_FLAG);
+            break;
+        case OPCODE::CLD:
+            ClearFlag(DECIMAL_FLAG);
+            break;
+        case OPCODE::CLI:
+            ClearFlag(INTERRUPT_DISABLE_FLAG);
+            break;
+        case OPCODE::CLV:
+            ClearFlag(OVERFLOW_FLAG);
+            break;
+        case OPCODE::CMP:
+            Compare(argument, A);
+            break;
+        case OPCODE::CPX:
+            Compare(argument, X);
+            break;
+        case OPCODE::CPY:
+            Compare(argument, Y);
+            break;
+        case OPCODE::DEC:
+            DEC(argument, address);
+            break;
+        case OPCODE::DEX:
+            DEX();
+            break;
+        case OPCODE::DEY:
+            DEY();
+            break;
+        case OPCODE::EOR:
+            EOR(argument);
+            break;
+        case OPCODE::INC:
+            INC(argument, address);
+            break;
+        case OPCODE::INX:
+            INX();
+            break;
+        case OPCODE::INY:
+            INY();
+            break;
+        case OPCODE::JMP:
+            JMP(address);
+            break;
+        case OPCODE::JSR:
+            JSR(address);
+            break;
+        case OPCODE::LDA:
+            Load(A, argument);
+            break;
+        case OPCODE::LDX:
+            Load(X, argument);
+            break;
+        case OPCODE::LDY:
+            Load(Y, argument);
+            break;
+        case OPCODE::LSR:
+            LSR(argument, address, addressing_mode);
+            break;
+        case OPCODE::NOP:
+            break;
+        case OPCODE::ORA:
+            ORA(argument);
+            break;
+        case OPCODE::PHA:
+            StackPush(A);
+            break;
+        case OPCODE::PHP:
+            StackPush(P);
+            break;
+        case OPCODE::PLA:
+            PullReg(A);
+            break;
+        case OPCODE::PLP:
+            PullReg(P);
+            break;
+        case OPCODE::ROL:
+            ROL(argument, address, addressing_mode);
+            break;
+        case OPCODE::ROR:
+            ROR(argument, address, addressing_mode);
+            break;
+        case OPCODE::RTI:
+            Return(true);
+            break;
+        case OPCODE::RTS:
+            Return(false);
+            break;
+        case OPCODE::SBC:
+            SBC(argument);
+            break;
+        case OPCODE::SEC:
+            SetFlag(CARRY_FLAG);
+            break;
+        case OPCODE::SED:
+            SetFlag(DECIMAL_FLAG);
+            break;
+        case OPCODE::SEI:
+            SetFlag(INTERRUPT_DISABLE_FLAG);
+            break;
+        case OPCODE::STA:
+            MemoryWrite(address, A);
+            break;
+        case OPCODE::STX:
+            MemoryWrite(address, X);
+            break;
+        case OPCODE::STY:
+            MemoryWrite(address, Y);
+            break;
+        case OPCODE::TAX:
+            Transfer(A, X);
+            break;
+        case OPCODE::TAY:
+            Transfer(A, Y);
+            break;
+        case OPCODE::TSX:
+            Transfer(S, X);
+            break;
+        case OPCODE::TXA:
+            Transfer(X, A);
+            break;
+        case OPCODE::TXS:
+            Transfer(X, S, false);
+            break;
+        case OPCODE::TYA:
+            Transfer(Y, A);
+            break;
+    }
+
+
     int wait_cycles = 0;
     switch (opcode) {
         case OPCODE::JMP:
@@ -174,26 +376,35 @@ void CPU::Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops)
     this->wait_steps += wait_cycles;
 }
 
-nes_address CPU::GetAddress(CPU_ADDRESSING_MODE mode, nes_address argument) {
+nes_address CPU::GetAddress(CPU_ADDRESSING_MODE mode, nes_address argument, bool& page_crossed) {
     switch (mode) {
         case CPU_ADDRESSING_MODE::ZERO_PAGE:
             return argument;
         case CPU_ADDRESSING_MODE::ZERO_PAGE_X:
-            return (argument + X) % 0x100;
+            return (nes_byte)(argument + X);
         case CPU_ADDRESSING_MODE::ZERO_PAGE_Y:
-            return (argument + Y) % 0x100;
+            return (nes_byte)(argument + Y);
         case CPU_ADDRESSING_MODE::ABSOLUTE:
             return argument;
         case CPU_ADDRESSING_MODE::ABSOLUTE_X:
+            if ((argument % 0x100) + X > 0xFF) {
+                page_crossed = true;
+            }
             return argument + X;
         case CPU_ADDRESSING_MODE::ABSOLUTE_Y:
+            if ((argument % 0x100) + Y > 0xFF) {
+                page_crossed = true;
+            }
             return argument + Y;
         case CPU_ADDRESSING_MODE::INDIRECT:
-            return MemoryRead(argument);
+            return MemoryRead(argument) + (MemoryRead((nes_byte)(argument + 1)) << 8);
         case CPU_ADDRESSING_MODE::INDIRECT_X:
-            return MemoryRead((argument + X) % 256) + (MemoryRead((argument + X + 1) % 256) << 8);
+            return MemoryRead((nes_byte)(argument + X)) + (MemoryRead((nes_byte)(argument + X + 1)) << 8);
         case CPU_ADDRESSING_MODE::INDIRECT_Y:
-            return MemoryRead(argument) + (MemoryRead((argument + 1) % 256) << 8) + Y;
+            if (MemoryRead(argument) + Y > 0xFF) {
+                page_crossed = true;
+            }
+            return MemoryRead(argument) + (MemoryRead((nes_byte)(argument + 1)) << 8) + Y;
         default:
             break;
     }
@@ -659,5 +870,295 @@ void CPU::Instruction(nes_byte opcode) {
         default:
             printf("ERROR: ILLEGAL OPCODE %d\n", opcode);
             break;
+    }
+}
+
+void CPU::StackPush(nes_byte value) {
+    MemoryWrite((nes_address) 0x100 + S++, value);
+}
+
+nes_byte CPU::StackPull() {
+    return MemoryRead((nes_address) 0x100 + --S);
+}
+
+void CPU::EvaluateCarry(nes_address value, bool invert) {
+    bool set_condition = value > 0xFF;
+    if (set_condition != invert) {
+        P |= CARRY_FLAG;
+    } else {
+        P &= ~CARRY_FLAG;
+    }
+}
+
+void CPU::EvaluateZero(nes_address value) {
+    if ((value % 0x100) == 0) {
+        P |= ZERO_FLAG;
+    } else {
+        P &= ~ZERO_FLAG;
+    }
+}
+
+void CPU::EvaluateOverflow(nes_address value, nes_byte argument, bool invert) {
+    bool args_same_sign = (argument & 0x80) == (A & 0x80);
+    bool result_different_sign = (A & 0x80) != (value & 0x80);
+    if (args_same_sign != invert && result_different_sign) {
+        P |= OVERFLOW_FLAG;
+    } else {
+        P &= ~OVERFLOW_FLAG;
+    }
+}
+
+void CPU::EvaluateNegative(nes_address value) {
+    if ((value & 0x80) != 0) {
+        P |= NEGATIVE_FLAG;
+    } else {
+        P &= ~NEGATIVE_FLAG;
+    }
+}
+
+void CPU::ADC(nes_byte argument) {
+    nes_address result = argument + A;
+    if (P & CARRY_FLAG) result++;
+
+    EvaluateCarry(result);
+    EvaluateZero(result);
+    EvaluateOverflow(result, argument);
+    EvaluateNegative(result);
+
+    A = (nes_byte) result;
+}
+
+void CPU::AND(nes_byte argument) {
+    nes_byte result = argument & A;
+
+    EvaluateZero(result);
+    EvaluateNegative(result);
+
+    A = result;
+}
+
+void CPU::ASL(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode) {
+    nes_address result = argument << 1;
+
+    EvaluateCarry(result);
+    EvaluateZero(result);
+    EvaluateNegative(result);
+
+    if (mode == CPU_ADDRESSING_MODE::ACCUMULATOR) {
+        A = (nes_byte) result;
+    } else {
+        MemoryWrite(address, (nes_byte) result);
+    }
+
+}
+
+void CPU::Branch(nes_byte argument, bool condition, bool& branch_succeeded) {
+    if (condition) {
+        PC += (char) argument;
+        branch_succeeded = true;
+    }
+}
+
+void CPU::BIT(nes_byte argument) {
+    EvaluateZero(argument & A);
+    EvaluateNegative(argument);
+    if (argument & 0x40) P |= OVERFLOW_FLAG; else P &= ~OVERFLOW_FLAG;
+}
+
+void CPU::BRK(nes_byte argument) {
+    // TODO: Implement interrupt hijacking
+    // http://wiki.nesdev.com/w/index.php/CPU_interrupts
+    P |= B_FLAG;
+    StackPush((nes_byte) (PC >> 8));
+    StackPush((nes_byte) PC);
+    StackPush(P);
+    PC = MemoryRead(IRQ_BRK_VECTOR_LOW) + (MemoryRead(IRQ_BRK_VECTOR_HIGH) << 8);
+    P |= INTERRUPT_DISABLE_FLAG;
+}
+
+void CPU::ClearFlag(nes_byte flag) {
+    P &= ~flag;
+}
+
+void CPU::Compare(nes_byte argument, nes_byte reg) {
+    char reg_signed = reg;
+    char arg_signed = argument;
+
+    if (reg_signed >= arg_signed) P |= CARRY_FLAG; else P &= ~CARRY_FLAG;
+    if (reg_signed == arg_signed) P |= ZERO_FLAG; else P &= ~ZERO_FLAG;
+    if (reg_signed < arg_signed) P|= NEGATIVE_FLAG; else P &= ~NEGATIVE_FLAG;
+}
+
+void CPU::DEC(nes_byte argument, nes_address address) {
+    nes_byte result =  argument - (nes_byte) 1;
+
+    EvaluateZero(result);
+    EvaluateNegative(result);
+
+    MemoryWrite(address, result);
+}
+
+void CPU::DEX() {
+    nes_byte result =  X - (nes_byte) 1;
+
+    EvaluateZero(result);
+    EvaluateNegative(result);
+
+    X = result;
+}
+
+void CPU::DEY() {
+    nes_byte result =  Y - (nes_byte) 1;
+
+    EvaluateZero(result);
+    EvaluateNegative(result);
+
+    Y = result;
+}
+
+void CPU::EOR(nes_byte argument) {
+    nes_byte result = A ^ argument;
+
+    EvaluateZero(result);
+    EvaluateNegative(result);
+
+    A = result;
+}
+
+void CPU::INC(nes_byte argument, nes_address address) {
+    nes_byte result =  argument + (nes_byte) 1;
+
+    EvaluateZero(result);
+    EvaluateNegative(result);
+
+    MemoryWrite(address, result);
+}
+
+void CPU::INX() {
+    nes_byte result =  X + (nes_byte) 1;
+
+    EvaluateZero(result);
+    EvaluateNegative(result);
+
+    X = result;
+}
+
+void CPU::INY() {
+    nes_byte result =  Y + (nes_byte) 1;
+
+    EvaluateZero(result);
+    EvaluateNegative(result);
+
+    Y = result;
+}
+
+void CPU::JMP(nes_address address) {
+    PC = address;
+}
+
+void CPU::JSR(nes_address address) {
+    StackPush((nes_byte) (PC >> 8));
+    StackPush((nes_byte) PC);
+    PC = address;
+}
+
+void CPU::Load(nes_byte& reg, nes_byte value) {
+    EvaluateZero(value);
+    EvaluateNegative(value);
+
+    reg = value;
+}
+
+void CPU::LSR(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode) {
+    nes_byte result = argument >> 1;
+
+    if (argument & 0x01) P |= CARRY_FLAG; else P &= ~CARRY_FLAG;
+    EvaluateZero(result);
+    EvaluateNegative(result);
+
+    if (mode == CPU_ADDRESSING_MODE::ACCUMULATOR) {
+        A = (nes_byte) result;
+    } else {
+        MemoryWrite(address, (nes_byte) result);
+    }
+}
+
+void CPU::ORA(nes_byte argument) {
+    nes_byte result = argument | A;
+
+    EvaluateZero(result);
+    EvaluateNegative(result);
+
+    A = result;
+}
+
+void CPU::PullReg(nes_byte &reg) {
+    nes_byte result = StackPull();
+
+    EvaluateZero(result);
+    EvaluateNegative(result);
+
+    reg = result;
+}
+
+void CPU::ROL(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode) {
+    nes_byte result = argument << 1;
+    if (P & CARRY_FLAG) result |= 0x01;
+
+    if (argument & 0x80) P |= CARRY_FLAG; else P &= ~CARRY_FLAG;
+    EvaluateZero(result);
+    EvaluateNegative(result);
+
+    if (mode == CPU_ADDRESSING_MODE::ACCUMULATOR) {
+        A = (nes_byte) result;
+    } else {
+        MemoryWrite(address, (nes_byte) result);
+    }
+}
+
+void CPU::ROR(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode) {
+    nes_byte result = argument >> 1;
+    if (P & CARRY_FLAG) result |= 0x80;
+
+    if (argument & 0x01) P |= CARRY_FLAG; else P &= ~CARRY_FLAG;
+    EvaluateZero(result);
+    EvaluateNegative(result);
+
+    if (mode == CPU_ADDRESSING_MODE::ACCUMULATOR) {
+        A = (nes_byte) result;
+    } else {
+        MemoryWrite(address, (nes_byte) result);
+    }
+}
+
+void CPU::Return(bool is_interrupt) {
+    if (is_interrupt) P = StackPull();
+    nes_byte lower = StackPull();
+    nes_byte upper = StackPull();
+    PC = lower + ((nes_address) upper << 8);
+}
+
+void CPU::SBC(nes_byte argument) {
+    nes_address result = A - argument;
+    if (!(P & CARRY_FLAG)) result--;
+
+    EvaluateCarry(result, true);
+    EvaluateZero(result);
+    EvaluateOverflow(result, argument, true);
+    EvaluateNegative(result);
+
+    A = (nes_byte) result;
+}
+
+void CPU::SetFlag(nes_byte flag) {
+    P |= flag;
+}
+
+void CPU::Transfer(nes_byte &from, nes_byte &to, bool flags) {
+    to = from;
+
+    if (flags) {
+        EvaluateZero(to);
+        EvaluateNegative(to);
     }
 }

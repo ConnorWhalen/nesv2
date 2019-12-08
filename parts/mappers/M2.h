@@ -14,7 +14,7 @@ constexpr nes_address MAPPER2_BANK_SIZE = 0x4000;
 
 class M2 : public Mapper {
 public:
-    M2(std::vector<unsigned char> *romBytes);
+    explicit M2(std::vector<unsigned char> *romBytes);
     std::vector<OutputData>* Serialize() override;
     nes_byte DoRead(nes_address address) override;
     void DoWrite(nes_address address, nes_byte value) override;

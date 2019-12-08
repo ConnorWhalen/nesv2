@@ -26,6 +26,14 @@ constexpr nes_address APU_REGISTERS_END = 0x4018;
 constexpr nes_address DISABLED_REGION_END = 0x4020;
 constexpr nes_address UNUSED_CARTRIDGE_REGION_END = 0x8000;
 
+constexpr nes_byte CARRY_FLAG = 0x01;
+constexpr nes_byte ZERO_FLAG = 0x02;
+constexpr nes_byte INTERRUPT_DISABLE_FLAG = 0x04;
+constexpr nes_byte DECIMAL_FLAG = 0x08;
+constexpr nes_byte OVERFLOW_FLAG = 0x40;
+constexpr nes_byte NEGATIVE_FLAG = 0x80;
+constexpr nes_byte B_FLAG = 0x30;
+
 enum class CPU_ADDRESSING_MODE {
     ZERO_PAGE_X,
     ZERO_PAGE_Y,
@@ -64,7 +72,7 @@ public:
 private:
     nes_byte MemoryRead(nes_address address);
     void MemoryWrite(nes_address address, nes_byte value);
-    nes_address GetAddress(CPU_ADDRESSING_MODE mode, nes_address argument);
+    nes_address GetAddress(CPU_ADDRESSING_MODE mode, nes_address argument, bool& page_crossed);
     void Instruction(nes_byte opcode);
     void Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops);
 
@@ -77,6 +85,41 @@ private:
     Mapper* mapper;
     nes_byte RAM[RAM_SIZE];
     int wait_steps;
+
+    void StackPush(nes_byte value);
+    nes_byte StackPull();
+    void EvaluateCarry(nes_address value, bool invert=false);
+    void EvaluateZero(nes_address value);
+    void EvaluateOverflow(nes_address value, nes_byte argument, bool invert=false);
+    void EvaluateNegative(nes_address value);
+
+    void ADC(nes_byte argument);
+    void AND(nes_byte argument);
+    void ASL(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode);
+    void Branch(nes_byte argument, bool condition, bool& branch_succeeded);
+    void BIT(nes_byte argument);
+    void BRK(nes_byte argument);
+    void ClearFlag(nes_byte flag);
+    void Compare(nes_byte argument, nes_byte reg);
+    void DEC(nes_byte argument, nes_address address);
+    void DEX();
+    void DEY();
+    void EOR(nes_byte argument);
+    void INC(nes_byte argument, nes_address address);
+    void INX();
+    void INY();
+    void JMP(nes_address address);
+    void JSR(nes_address address);
+    void Load(nes_byte& reg, nes_byte value);
+    void LSR(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode);
+    void ORA(nes_byte argument);
+    void PullReg(nes_byte& reg);
+    void ROL(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode);
+    void ROR(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode);
+    void Return(bool is_interrupt);
+    void SBC(nes_byte argument);
+    void SetFlag(nes_byte flag);
+    void Transfer(nes_byte& from, nes_byte& to, bool flags=true);
 };
 
 #endif //NESV2_CPU_H
