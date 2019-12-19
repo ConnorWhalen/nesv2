@@ -10,6 +10,10 @@
 #include <string>
 #include <vector>
 
+constexpr unsigned short CART_RAM_SIZE = 0x2000;
+constexpr unsigned short ROM_PAGE_SIZE = 0x4000;
+constexpr unsigned short CHR_PAGE_SIZE = 0x2000;
+
 namespace RomParser {
 
 struct RomData {
@@ -25,6 +29,7 @@ struct RomData {
     bool vsUnisystem;
     unsigned char *cartRAM;
     std::vector<unsigned char> *romBytes;
+    std::vector<unsigned char> *chrBytes;
 };
 
 RomData* parse(const std::string &fileName);

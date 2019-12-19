@@ -13,10 +13,10 @@
 
 constexpr nes_address NMI_VECTOR_LOW = 0xFFFA;
 constexpr nes_address NMI_VECTOR_HIGH = 0xFFFB;
-constexpr nes_address RESET_VECTOR_HIGH = 0xFFFC;
-constexpr nes_address RESET_VECTOR_LOW = 0xFFFD;
-constexpr nes_address IRQ_BRK_VECTOR_HIGH = 0xFFFE;
-constexpr nes_address IRQ_BRK_VECTOR_LOW = 0xFFFF;
+constexpr nes_address RESET_VECTOR_LOW = 0xFFFC;
+constexpr nes_address RESET_VECTOR_HIGH = 0xFFFD;
+constexpr nes_address IRQ_BRK_VECTOR_LOW = 0xFFFE;
+constexpr nes_address IRQ_BRK_VECTOR_HIGH = 0xFFFF;
 
 constexpr nes_address RAM_SIZE = 0x800;
 
@@ -24,7 +24,7 @@ constexpr nes_address RAM_SEGMENT_END = 0x2000;
 constexpr nes_address PPU_REGISTERS_END = 0x4000;
 constexpr nes_address APU_REGISTERS_END = 0x4018;
 constexpr nes_address DISABLED_REGION_END = 0x4020;
-constexpr nes_address UNUSED_CARTRIDGE_REGION_END = 0x8000;
+constexpr nes_address CARTRIDGE_RAM_REGION_END = 0x8000;
 
 constexpr nes_byte CARRY_FLAG = 0x01;
 constexpr nes_byte ZERO_FLAG = 0x02;
@@ -32,7 +32,8 @@ constexpr nes_byte INTERRUPT_DISABLE_FLAG = 0x04;
 constexpr nes_byte DECIMAL_FLAG = 0x08;
 constexpr nes_byte OVERFLOW_FLAG = 0x40;
 constexpr nes_byte NEGATIVE_FLAG = 0x80;
-constexpr nes_byte B_FLAG = 0x30;
+constexpr nes_byte B_FLAG_INST = 0x30;
+constexpr nes_byte B_FLAG_INTR = 0x20;
 
 constexpr nes_byte INITIAL_A = 0x00;
 constexpr nes_byte INITIAL_X = 0x00;
@@ -76,6 +77,7 @@ public:
     std::vector<OutputData>* Serialize() override;
     void Step() override;
     void Reset();
+    void NMI();
 private:
     nes_byte MemoryRead(nes_address address);
     void MemoryWrite(nes_address address, nes_byte value);

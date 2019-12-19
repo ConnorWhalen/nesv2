@@ -34,55 +34,55 @@ TEST_CASE("MAPPER 2") {
 
     SECTION("BANK 7 READ") {
         for (int i = 0; i < MAPPER0_SIZE/2; i++) {
-            REQUIRE(mapper.DoRead(i+MAPPER_REGION_MIDDLE) == romBytes->at(i+MAPPER2_BANK_SIZE*7));
+            REQUIRE(mapper.DoRead(i+MAPPER_ROM_REGION_MIDDLE) == romBytes->at(i+MAPPER2_BANK_SIZE*7));
         }
     }
 
     SECTION("BANK 0 READ") {
         for (int i = 0; i < MAPPER0_SIZE/2; i++) {
-            REQUIRE(mapper.DoRead(i+MAPPER_REGION_START) == romBytes->at(i));
+            REQUIRE(mapper.DoRead(i+MAPPER_ROM_REGION_START) == romBytes->at(i));
         }
     }
 
     SECTION("BANK 1 READ") {
         mapper.DoWrite(0x8000, 1);
         for (int i = 0; i < MAPPER0_SIZE/2; i++) {
-            REQUIRE(mapper.DoRead(i+MAPPER_REGION_START) == romBytes->at(i+MAPPER2_BANK_SIZE));
+            REQUIRE(mapper.DoRead(i+MAPPER_ROM_REGION_START) == romBytes->at(i+MAPPER2_BANK_SIZE));
         }
     }
 
     SECTION("BANK 2 READ") {
         mapper.DoWrite(0x8000, 2);
         for (int i = 0; i < MAPPER0_SIZE/2; i++) {
-            REQUIRE(mapper.DoRead(i+MAPPER_REGION_START) == romBytes->at(i+MAPPER2_BANK_SIZE*2));
+            REQUIRE(mapper.DoRead(i+MAPPER_ROM_REGION_START) == romBytes->at(i+MAPPER2_BANK_SIZE*2));
         }
     }
 
     SECTION("BANK 3 READ") {
         mapper.DoWrite(0x8000, 3);
         for (int i = 0; i < MAPPER0_SIZE/2; i++) {
-            REQUIRE(mapper.DoRead(i+MAPPER_REGION_START) == romBytes->at(i+MAPPER2_BANK_SIZE*3));
+            REQUIRE(mapper.DoRead(i+MAPPER_ROM_REGION_START) == romBytes->at(i+MAPPER2_BANK_SIZE*3));
         }
     }
 
     SECTION("BANK 4 READ") {
         mapper.DoWrite(0x8000, 4);
         for (int i = 0; i < MAPPER0_SIZE/2; i++) {
-            REQUIRE(mapper.DoRead(i+MAPPER_REGION_START) == romBytes->at(i+MAPPER2_BANK_SIZE*4));
+            REQUIRE(mapper.DoRead(i+MAPPER_ROM_REGION_START) == romBytes->at(i+MAPPER2_BANK_SIZE*4));
         }
     }
 
     SECTION("BANK 5 READ") {
         mapper.DoWrite(0x8000, 5);
         for (int i = 0; i < MAPPER0_SIZE/2; i++) {
-            REQUIRE(mapper.DoRead(i+MAPPER_REGION_START) == romBytes->at(i+MAPPER2_BANK_SIZE*5));
+            REQUIRE(mapper.DoRead(i+MAPPER_ROM_REGION_START) == romBytes->at(i+MAPPER2_BANK_SIZE*5));
         }
     }
 
     SECTION("BANK 6 READ") {
         mapper.DoWrite(0x8000, 6);
         for (int i = 0; i < MAPPER0_SIZE/2; i++) {
-            REQUIRE(mapper.DoRead(i+MAPPER_REGION_START) == romBytes->at(i+MAPPER2_BANK_SIZE*6));
+            REQUIRE(mapper.DoRead(i+MAPPER_ROM_REGION_START) == romBytes->at(i+MAPPER2_BANK_SIZE*6));
         }
     }
 }

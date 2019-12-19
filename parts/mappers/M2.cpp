@@ -28,7 +28,11 @@ std::vector<OutputData>* M2::Serialize() {
 }
 
 nes_byte M2::DoRead(nes_address address) {
-    if (address < MAPPER_REGION_MIDDLE) {
+    if (address < MAPPER_ROM_REGION_START) {
+        printf("ERROR: INVALID MAPPER 2 READ ADDRESS %x\n", address);
+        return 0;
+    }
+    else if (address < MAPPER_ROM_REGION_MIDDLE) {
         return bytes[address+MAPPER2_BANK_SIZE*(this->bank-2)];
     } else {
         return this->bytes[address+0x10000];

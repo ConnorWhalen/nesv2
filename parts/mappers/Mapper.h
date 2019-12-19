@@ -10,8 +10,10 @@
 #include "../OutputData.h"
 #include "../Part.h"
 
-constexpr nes_address MAPPER_REGION_START = 0x8000;
-constexpr nes_address MAPPER_REGION_MIDDLE = 0xC000;
+constexpr nes_address MAPPER_REGION_START = 0x4020;
+constexpr nes_address MAPPER_RAM_REGION_START = 0x6000;
+constexpr nes_address MAPPER_ROM_REGION_START = 0x8000;
+constexpr nes_address MAPPER_ROM_REGION_MIDDLE = 0xC000;
 
 class Mapper : public Part {
 public:

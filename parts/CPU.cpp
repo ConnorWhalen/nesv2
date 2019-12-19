@@ -13,7 +13,6 @@ CPU::CPU(Mapper* mapper) {
     this->mapper = mapper;
     // http://wiki.nesdev.com/w/index.php/CPU
     this->STEPS_PER_TICK = (CLOCK_FREQUENCY/12)/FPS;
-    // http://wiki.nesdev.com/w/index.php/CPU_power_up_state
     this->Reset();
 }
 
@@ -51,6 +50,7 @@ void CPU::Step() {
 }
 
 void CPU::Reset() {
+    // http://wiki.nesdev.com/w/index.php/CPU_power_up_state
     this->A = 0;
     this->X = 0;
     this->Y = 0;
@@ -58,6 +58,15 @@ void CPU::Reset() {
     this->P = 0x34;
     this->PC = (this->MemoryRead(RESET_VECTOR_HIGH) << 8) + this->MemoryRead(RESET_VECTOR_LOW);
     this->wait_steps = 1;
+}
+
+void CPU::NMI() {
+    StackPush((nes_byte) (PC >> 8));
+    StackPush((nes_byte) PC);
+    StackPush(P);
+    PC = MemoryRead(NMI_VECTOR_LOW) + (MemoryRead(NMI_VECTOR_HIGH) << 8);
+    P |= INTERRUPT_DISABLE_FLAG;
+    P |= B_FLAG_INTR;
 }
 
 nes_byte CPU::MemoryRead(nes_address address) {
@@ -69,10 +78,6 @@ nes_byte CPU::MemoryRead(nes_address address) {
         return 0; // TODO: APU read
     } else if (address < DISABLED_REGION_END) {
         printf("WARNING: READ FROM DISABLED REGION ADDRESS %x\n", address);
-        return 0;
-    } else if (address < UNUSED_CARTRIDGE_REGION_END) {
-        // TODO: Unused cartridge region
-        printf("WARNING: READ FROM UNUSED CARTRIDGE REGION ADDRESS %x\n", address);
         return 0;
     } else {
         return mapper->Read(address);
@@ -88,9 +93,6 @@ void CPU::MemoryWrite(nes_address address, nes_byte value) {
         // TODO: APU read
     } else if (address < DISABLED_REGION_END) {
         printf("WARNING: WRITE TO DISABLED REGION ADDRESS %x VALUE %x\n", address, value);
-    } else if (address < UNUSED_CARTRIDGE_REGION_END) {
-        // TODO: Unused cartridge region
-        printf("WARNING: WRITE TO UNUSED CARTRIDGE REGION ADDRESS %x VALUE %x\n", address, value);
     } else {
         return mapper->Write(address, value);
     }
@@ -115,7 +117,6 @@ void CPU::Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops)
         case CPU_ADDRESSING_MODE::ZERO_PAGE:
         case CPU_ADDRESSING_MODE::ZERO_PAGE_X:
         case CPU_ADDRESSING_MODE::ZERO_PAGE_Y:
-        case CPU_ADDRESSING_MODE::INDIRECT:
         case CPU_ADDRESSING_MODE::INDIRECT_X:
         case CPU_ADDRESSING_MODE::INDIRECT_Y:
             address = GetAddress(addressing_mode, MemoryRead(PC++), page_crossed);
@@ -124,6 +125,7 @@ void CPU::Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops)
         case CPU_ADDRESSING_MODE::ABSOLUTE:
         case CPU_ADDRESSING_MODE::ABSOLUTE_X:
         case CPU_ADDRESSING_MODE::ABSOLUTE_Y:
+        case CPU_ADDRESSING_MODE::INDIRECT:
             address_argument = MemoryRead(PC++);
             address_argument += (MemoryRead(PC++) << 8);
             address = GetAddress(addressing_mode, address_argument, page_crossed);
@@ -241,7 +243,7 @@ void CPU::Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops)
             StackPush(A);
             break;
         case OPCODE::PHP:
-            StackPush(P);
+            StackPush(P | B_FLAG_INST);
             break;
         case OPCODE::PLA:
             PullReg(A);
@@ -373,7 +375,7 @@ void CPU::Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops)
                     break;
             }
             break;
-        case CPU_ADDRESSING_MODE ::INDIRECT:
+        case CPU_ADDRESSING_MODE::INDIRECT:
         case CPU_ADDRESSING_MODE::INDIRECT_X:
             wait_cycles += 6;
             break;
@@ -406,6 +408,7 @@ void CPU::Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops)
 }
 
 nes_address CPU::GetAddress(CPU_ADDRESSING_MODE mode, nes_address argument, bool& page_crossed) {
+    nes_address upper = argument + 1;
     switch (mode) {
         case CPU_ADDRESSING_MODE::ZERO_PAGE:
             return argument;
@@ -426,7 +429,8 @@ nes_address CPU::GetAddress(CPU_ADDRESSING_MODE mode, nes_address argument, bool
             }
             return argument + Y;
         case CPU_ADDRESSING_MODE::INDIRECT:
-            return MemoryRead(argument) + (MemoryRead((nes_byte)(argument + 1)) << 8);
+            if (!(upper & 0xFF)) upper -= 0x100;
+            return MemoryRead(argument) + (MemoryRead(upper) << 8);
         case CPU_ADDRESSING_MODE::INDIRECT_X:
             return MemoryRead((nes_byte)(argument + X)) + (MemoryRead((nes_byte)(argument + X + 1)) << 8);
         case CPU_ADDRESSING_MODE::INDIRECT_Y:
@@ -864,7 +868,7 @@ void CPU::Instruction(nes_byte opcode) {
             Execute(OPCODE::STX, CPU_ADDRESSING_MODE::ZERO_PAGE, OOPS::NONE);
             break;
         case 0x96:
-            Execute(OPCODE::STX, CPU_ADDRESSING_MODE::ZERO_PAGE_X, OOPS::NONE);
+            Execute(OPCODE::STX, CPU_ADDRESSING_MODE::ZERO_PAGE_Y, OOPS::NONE);
             break;
         case 0x8E:
             Execute(OPCODE::STX, CPU_ADDRESSING_MODE::ABSOLUTE, OOPS::NONE);
@@ -903,11 +907,11 @@ void CPU::Instruction(nes_byte opcode) {
 }
 
 void CPU::StackPush(nes_byte value) {
-    MemoryWrite((nes_address) 0x100 + S++, value);
+    MemoryWrite((nes_address) 0x100 + S--, value);
 }
 
 nes_byte CPU::StackPull() {
-    return MemoryRead((nes_address) 0x100 + --S);
+    return MemoryRead((nes_address) 0x100 + ++S);
 }
 
 void CPU::EvaluateCarry(nes_address value, bool invert) {
@@ -997,12 +1001,16 @@ void CPU::BIT(nes_byte argument) {
 void CPU::BRK(nes_byte argument) {
     // TODO: Implement interrupt hijacking
     // http://wiki.nesdev.com/w/index.php/CPU_interrupts
-    P |= B_FLAG;
-    StackPush((nes_byte) (PC >> 8));
-    StackPush((nes_byte) PC);
-    StackPush(P);
-    PC = MemoryRead(IRQ_BRK_VECTOR_LOW) + (MemoryRead(IRQ_BRK_VECTOR_HIGH) << 8);
-    P |= INTERRUPT_DISABLE_FLAG;
+    if (!(P & INTERRUPT_DISABLE_FLAG)) {
+        StackPush((nes_byte) (PC >> 8));
+        StackPush((nes_byte) PC);
+        StackPush(P);
+        PC = MemoryRead(IRQ_BRK_VECTOR_LOW) + (MemoryRead(IRQ_BRK_VECTOR_HIGH) << 8);
+        P |= B_FLAG_INST;
+        P |= INTERRUPT_DISABLE_FLAG;
+    } else {
+        printf("IRQ BLOCKED\n");
+    }
 }
 
 void CPU::ClearFlag(nes_byte flag) {
@@ -1010,12 +1018,9 @@ void CPU::ClearFlag(nes_byte flag) {
 }
 
 void CPU::Compare(nes_byte argument, nes_byte reg) {
-    char reg_signed = reg;
-    char arg_signed = argument;
-
-    if (reg_signed >= arg_signed) P |= CARRY_FLAG; else P &= ~CARRY_FLAG;
-    if (reg_signed == arg_signed) P |= ZERO_FLAG; else P &= ~ZERO_FLAG;
-    if (reg_signed < arg_signed) P|= NEGATIVE_FLAG; else P &= ~NEGATIVE_FLAG;
+    if (reg >= argument) P |= CARRY_FLAG; else P &= ~CARRY_FLAG;
+    if (reg == argument) P |= ZERO_FLAG; else P &= ~ZERO_FLAG;
+    if ((reg - argument) & 0x80) P|= NEGATIVE_FLAG; else P &= ~NEGATIVE_FLAG;
 }
 
 void CPU::DEC(nes_byte argument, nes_address address) {

@@ -58,10 +58,16 @@ RomData *parse(const std::string &filename) {
         // TODO: NES1 spec header
     }
 
-    auto cartRAM = new unsigned char[0x2000];
+    auto cartRAM = new unsigned char[CART_RAM_SIZE];
     auto romBytes = new std::vector<unsigned char>();
-    while (inFile.get(inChar)) {
+    auto chrBytes = new std::vector<unsigned char>();
+    for (int i = 0; i < ROM_PAGE_SIZE*programRomPageCount; i++) {
+        inFile.get(inChar);
         romBytes->push_back(inChar);
+    }
+    for (int i = 0; i < CHR_PAGE_SIZE*characterRomPageCount; i++) {
+        inFile.get(inChar);
+        chrBytes->push_back(inChar);
     }
     inFile.close();
     return new RomData{
@@ -76,7 +82,8 @@ RomData *parse(const std::string &filename) {
             playchoice10,
             vsUnisystem,
             cartRAM,
-            romBytes
+            romBytes,
+            chrBytes
     };
 }
 

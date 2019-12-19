@@ -35,10 +35,10 @@ std::string getRamString(nes_byte ram[]) {
 }
 
 void setResetVector(std::vector<nes_byte>* romBytes, nes_address value) {
-    romBytes->at(RESET_VECTOR_HIGH-UNUSED_CARTRIDGE_REGION_END) = (nes_byte) (value >> 8);
-    romBytes->at(RESET_VECTOR_LOW-UNUSED_CARTRIDGE_REGION_END) = (nes_byte) (value & 0xFF);
+    romBytes->at(RESET_VECTOR_HIGH-CARTRIDGE_RAM_REGION_END) = (nes_byte) (value >> 8);
+    romBytes->at(RESET_VECTOR_LOW-CARTRIDGE_RAM_REGION_END) = (nes_byte) (value & 0xFF);
 }
 
 void relativeRomWrite(std::vector<nes_byte>* romBytes, nes_address address, nes_byte value) {
-    romBytes->at(address - UNUSED_CARTRIDGE_REGION_END) = value;
+    romBytes->at(address - CARTRIDGE_RAM_REGION_END) = value;
 }

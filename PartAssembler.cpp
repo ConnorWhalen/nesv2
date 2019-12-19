@@ -7,6 +7,7 @@
 #include "PartAssembler.h"
 
 #include "parts/mappers/M0.h"
+#include "parts/mappers/M1.h"
 #include "parts/mappers/M2.h"
 
 Parts* PartAssembler::Assemble(
@@ -20,7 +21,9 @@ Parts* PartAssembler::Assemble(
 ) {
     auto parts = new Parts {};
     if (romData->mapper == 0) {
-        parts->mapper = new M0(romData->romBytes);
+        parts->mapper = new M0(romData->romBytes, romData->cartRAM);
+    } else if (romData->mapper == 1) {
+        parts->mapper = new M1(romData->romBytes, romData->cartRAM);
     } else if (romData->mapper == 2) {
         parts->mapper = new M2(romData->romBytes);
     } else {

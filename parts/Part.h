@@ -29,6 +29,7 @@ public:
     virtual void Step() {};
     void Tick() {
         while (step++ < STEPS_PER_TICK) Step();
+        step = 0;
     };
 protected:
     int step = 0;
