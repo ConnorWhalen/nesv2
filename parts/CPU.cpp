@@ -9,11 +9,14 @@
 #include <iomanip>
 #include <sstream>
 
-CPU::CPU(Mapper* mapper) {
+CPU::CPU(Mapper* mapper, Part* ppu) {
     this->mapper = mapper;
+    this->ppu = ppu;
     // http://wiki.nesdev.com/w/index.php/CPU
     this->STEPS_PER_TICK = (CLOCK_FREQUENCY/12)/FPS;
     this->Reset();
+    // this->PC = 0xC000; // for nestest.nes
+    for (int i = 0; i < RAM_SIZE; i++) this->RAM[i] = 0;
 }
 
 std::vector<OutputData>* CPU::Serialize() {
@@ -45,6 +48,7 @@ std::vector<OutputData>* CPU::Serialize() {
 void CPU::Step() {
     if (--this->wait_steps < 1) {
         nes_byte opcode = MemoryRead(PC++);
+        // printf("%x\n", opcode);
         Instruction(opcode);
     }
 }
@@ -63,17 +67,17 @@ void CPU::Reset() {
 void CPU::NMI() {
     StackPush((nes_byte) (PC >> 8));
     StackPush((nes_byte) PC);
+    P |= B_FLAG_INTR;
     StackPush(P);
     PC = MemoryRead(NMI_VECTOR_LOW) + (MemoryRead(NMI_VECTOR_HIGH) << 8);
     P |= INTERRUPT_DISABLE_FLAG;
-    P |= B_FLAG_INTR;
 }
 
 nes_byte CPU::MemoryRead(nes_address address) {
     if (address < RAM_SEGMENT_END) {
         return RAM[address % RAM_SIZE];
     } else if (address < PPU_REGISTERS_END) {
-        return 0; // TODO: PPU read
+        return ppu->Read(address - RAM_SEGMENT_END);
     } else if (address < APU_REGISTERS_END) {
         return 0; // TODO: APU read
     } else if (address < DISABLED_REGION_END) {
@@ -88,9 +92,9 @@ void CPU::MemoryWrite(nes_address address, nes_byte value) {
     if (address < RAM_SEGMENT_END) {
         RAM[address % RAM_SIZE] = value;
     } else if (address < PPU_REGISTERS_END) {
-        // TODO: PPU read
+        ppu->Write(address - RAM_SEGMENT_END, value);
     } else if (address < APU_REGISTERS_END) {
-        // TODO: APU read
+        // TODO: APU write
     } else if (address < DISABLED_REGION_END) {
         printf("WARNING: WRITE TO DISABLED REGION ADDRESS %x VALUE %x\n", address, value);
     } else {
@@ -195,6 +199,10 @@ void CPU::Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops)
         case OPCODE::CPY:
             Compare(argument, Y);
             break;
+        case OPCODE::DCP:
+            argument = DEC(argument, address);
+            Compare(argument, A);
+            break;
         case OPCODE::DEC:
             DEC(argument, address);
             break;
@@ -207,6 +215,8 @@ void CPU::Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops)
         case OPCODE::EOR:
             EOR(argument);
             break;
+        case OPCODE::IGN:
+            break;
         case OPCODE::INC:
             INC(argument, address);
             break;
@@ -216,11 +226,19 @@ void CPU::Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops)
         case OPCODE::INY:
             INY();
             break;
+        case OPCODE::ISC:
+            argument = INC(argument, address);
+            SBC(argument);
+            break;
         case OPCODE::JMP:
             JMP(address);
             break;
         case OPCODE::JSR:
             JSR(address);
+            break;
+        case OPCODE::LAX:
+            Load(A, argument);
+            Transfer(A, X);
             break;
         case OPCODE::LDA:
             Load(A, argument);
@@ -251,17 +269,28 @@ void CPU::Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops)
         case OPCODE::PLP:
             PullReg(P);
             break;
+        case OPCODE::RLA:
+            argument = ROL(argument, address, addressing_mode);
+            AND(argument);
+            break;
         case OPCODE::ROL:
             ROL(argument, address, addressing_mode);
             break;
         case OPCODE::ROR:
             ROR(argument, address, addressing_mode);
             break;
+        case OPCODE::RRA:
+            argument = ROR(argument, address, addressing_mode);
+            ADC(argument);
+            break;
         case OPCODE::RTI:
             Return(true);
             break;
         case OPCODE::RTS:
             Return(false);
+            break;
+        case OPCODE::SAX:
+            MemoryWrite(address, A & X);
             break;
         case OPCODE::SBC:
             SBC(argument);
@@ -274,6 +303,16 @@ void CPU::Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops)
             break;
         case OPCODE::SEI:
             SetFlag(INTERRUPT_DISABLE_FLAG);
+            break;
+        case OPCODE::SKB:
+            break;
+        case OPCODE::SLO:
+            argument = ASL(argument, address, addressing_mode);
+            ORA(argument);
+            break;
+        case OPCODE::SRE:
+            argument = LSR(argument, address, addressing_mode);
+            EOR(argument);
             break;
         case OPCODE::STA:
             MemoryWrite(address, A);
@@ -322,14 +361,20 @@ void CPU::Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops)
         case OPCODE::BPL:
         case OPCODE::BVC:
         case OPCODE::BVS:
+        case OPCODE::DCP:
         case OPCODE::DEC:
         case OPCODE::INC:
+        case OPCODE::ISC:
         case OPCODE::JSR:
         case OPCODE::LSR:
         case OPCODE::PLA:
         case OPCODE::PLP:
+        case OPCODE::RLA:
         case OPCODE::ROL:
         case OPCODE::ROR:
+        case OPCODE::RRA:
+        case OPCODE::SLO:
+        case OPCODE::SRE:
             wait_cycles = 2;
             break;
         case OPCODE::RTI:
@@ -360,7 +405,7 @@ void CPU::Execute(OPCODE opcode, CPU_ADDRESSING_MODE addressing_mode, OOPS oops)
             break;
         case CPU_ADDRESSING_MODE::ABSOLUTE_X:
         case CPU_ADDRESSING_MODE::ABSOLUTE_Y:
-            wait_cycles += 5;
+            wait_cycles += 4;
             switch (oops) {
                 case OOPS::NONE:
                     wait_cycles += 1;
@@ -597,6 +642,27 @@ void CPU::Instruction(nes_byte opcode) {
         case 0xCC:
             Execute(OPCODE::CPY, CPU_ADDRESSING_MODE::ABSOLUTE, OOPS::NONE);
             break;
+        case 0xC7:
+            Execute(OPCODE::DCP, CPU_ADDRESSING_MODE::ZERO_PAGE, OOPS::NONE);
+            break;
+        case 0xD7:
+            Execute(OPCODE::DCP, CPU_ADDRESSING_MODE::ZERO_PAGE_X, OOPS::NONE);
+            break;
+        case 0xCF:
+            Execute(OPCODE::DCP, CPU_ADDRESSING_MODE::ABSOLUTE, OOPS::NONE);
+            break;
+        case 0xDF:
+            Execute(OPCODE::DCP, CPU_ADDRESSING_MODE::ABSOLUTE_X, OOPS::NONE);
+            break;
+        case 0xDB:
+            Execute(OPCODE::DCP, CPU_ADDRESSING_MODE::ABSOLUTE_Y, OOPS::NONE);
+            break;
+        case 0xC3:
+            Execute(OPCODE::DCP, CPU_ADDRESSING_MODE::INDIRECT_X, OOPS::NONE);
+            break;
+        case 0xD3:
+            Execute(OPCODE::DCP, CPU_ADDRESSING_MODE::INDIRECT_Y, OOPS::NONE);
+            break;
         case 0xC6:
             Execute(OPCODE::DEC, CPU_ADDRESSING_MODE::ZERO_PAGE, OOPS::NONE);
             break;
@@ -639,6 +705,30 @@ void CPU::Instruction(nes_byte opcode) {
         case 0x51:
             Execute(OPCODE::EOR, CPU_ADDRESSING_MODE::INDIRECT_Y, OOPS::ADD_IF_PAGE_CROSSED);
             break;
+        case 0x0C:
+            Execute(OPCODE::IGN, CPU_ADDRESSING_MODE::ABSOLUTE, OOPS::NONE);
+            break;
+        case 0x1C:
+        case 0x3C:
+        case 0x5C:
+        case 0x7C:
+        case 0xDC:
+        case 0xFC:
+            Execute(OPCODE::IGN, CPU_ADDRESSING_MODE::ABSOLUTE_X, OOPS::ADD_IF_PAGE_CROSSED);
+            break;
+        case 0x04:
+        case 0x44:
+        case 0x64:
+            Execute(OPCODE::IGN, CPU_ADDRESSING_MODE::ZERO_PAGE, OOPS::NONE);
+            break;
+        case 0x14:
+        case 0x34:
+        case 0x54:
+        case 0x74:
+        case 0xD4:
+        case 0xF4:
+            Execute(OPCODE::IGN, CPU_ADDRESSING_MODE::ZERO_PAGE_X, OOPS::NONE);
+            break;
         case 0xE6:
             Execute(OPCODE::INC, CPU_ADDRESSING_MODE::ZERO_PAGE, OOPS::NONE);
             break;
@@ -657,6 +747,27 @@ void CPU::Instruction(nes_byte opcode) {
         case 0xC8:
             Execute(OPCODE::INY, CPU_ADDRESSING_MODE::IMPLICIT, OOPS::NONE);
             break;
+        case 0xE7:
+            Execute(OPCODE::ISC, CPU_ADDRESSING_MODE::ZERO_PAGE, OOPS::NONE);
+            break;
+        case 0xF7:
+            Execute(OPCODE::ISC, CPU_ADDRESSING_MODE::ZERO_PAGE_X, OOPS::NONE);
+            break;
+        case 0xEF:
+            Execute(OPCODE::ISC, CPU_ADDRESSING_MODE::ABSOLUTE, OOPS::NONE);
+            break;
+        case 0xFF:
+            Execute(OPCODE::ISC, CPU_ADDRESSING_MODE::ABSOLUTE_X, OOPS::NONE);
+            break;
+        case 0xFB:
+            Execute(OPCODE::ISC, CPU_ADDRESSING_MODE::ABSOLUTE_Y, OOPS::NONE);
+            break;
+        case 0xE3:
+            Execute(OPCODE::ISC, CPU_ADDRESSING_MODE::INDIRECT_X, OOPS::NONE);
+            break;
+        case 0xF3:
+            Execute(OPCODE::ISC, CPU_ADDRESSING_MODE::INDIRECT_Y, OOPS::NONE);
+            break;
         case 0x4C:
             Execute(OPCODE::JMP, CPU_ADDRESSING_MODE::ABSOLUTE, OOPS::NONE);
             break;
@@ -665,6 +776,24 @@ void CPU::Instruction(nes_byte opcode) {
             break;
         case 0x20:
             Execute(OPCODE::JSR, CPU_ADDRESSING_MODE::ABSOLUTE, OOPS::NONE);
+            break;
+        case 0xA7:
+            Execute(OPCODE::LAX, CPU_ADDRESSING_MODE::ZERO_PAGE, OOPS::NONE);
+            break;
+        case 0xB7:
+            Execute(OPCODE::LAX, CPU_ADDRESSING_MODE::ZERO_PAGE_Y, OOPS::NONE);
+            break;
+        case 0xAF:
+            Execute(OPCODE::LAX, CPU_ADDRESSING_MODE::ABSOLUTE, OOPS::NONE);
+            break;
+        case 0xBF:
+            Execute(OPCODE::LAX, CPU_ADDRESSING_MODE::ABSOLUTE_Y, OOPS::ADD_IF_PAGE_CROSSED);
+            break;
+        case 0xA3:
+            Execute(OPCODE::LAX, CPU_ADDRESSING_MODE::INDIRECT_X, OOPS::NONE);
+            break;
+        case 0xB3:
+            Execute(OPCODE::LAX, CPU_ADDRESSING_MODE::INDIRECT_Y, OOPS::ADD_IF_PAGE_CROSSED);
             break;
         case 0xA9:
             Execute(OPCODE::LDA, CPU_ADDRESSING_MODE::IMMEDIATE, OOPS::NONE);
@@ -735,7 +864,13 @@ void CPU::Instruction(nes_byte opcode) {
         case 0x5E:
             Execute(OPCODE::LSR, CPU_ADDRESSING_MODE::ABSOLUTE_X, OOPS::NONE);
             break;
+        case 0x1A:
+        case 0x3A:
+        case 0x5A:
+        case 0x7A:
+        case 0xDA:
         case 0xEA:
+        case 0xFA:
             Execute(OPCODE::NOP, CPU_ADDRESSING_MODE::IMPLICIT, OOPS::NONE);
             break;
         case 0x09:
@@ -774,6 +909,27 @@ void CPU::Instruction(nes_byte opcode) {
         case 0x28:
             Execute(OPCODE::PLP, CPU_ADDRESSING_MODE::IMPLICIT, OOPS::NONE);
             break;
+        case 0x27:
+            Execute(OPCODE::RLA, CPU_ADDRESSING_MODE::ZERO_PAGE, OOPS::NONE);
+            break;
+        case 0x37:
+            Execute(OPCODE::RLA, CPU_ADDRESSING_MODE::ZERO_PAGE_X, OOPS::NONE);
+            break;
+        case 0x2F:
+            Execute(OPCODE::RLA, CPU_ADDRESSING_MODE::ABSOLUTE, OOPS::NONE);
+            break;
+        case 0x3F:
+            Execute(OPCODE::RLA, CPU_ADDRESSING_MODE::ABSOLUTE_X, OOPS::NONE);
+            break;
+        case 0x3B:
+            Execute(OPCODE::RLA, CPU_ADDRESSING_MODE::ABSOLUTE_Y, OOPS::NONE);
+            break;
+        case 0x23:
+            Execute(OPCODE::RLA, CPU_ADDRESSING_MODE::INDIRECT_X, OOPS::NONE);
+            break;
+        case 0x33:
+            Execute(OPCODE::RLA, CPU_ADDRESSING_MODE::INDIRECT_Y, OOPS::NONE);
+            break;
         case 0x2A:
             Execute(OPCODE::ROL, CPU_ADDRESSING_MODE::ACCUMULATOR, OOPS::NONE);
             break;
@@ -804,13 +960,47 @@ void CPU::Instruction(nes_byte opcode) {
         case 0x7E:
             Execute(OPCODE::ROR, CPU_ADDRESSING_MODE::ABSOLUTE_X, OOPS::NONE);
             break;
+        case 0x67:
+            Execute(OPCODE::RRA, CPU_ADDRESSING_MODE::ZERO_PAGE, OOPS::NONE);
+            break;
+        case 0x77:
+            Execute(OPCODE::RRA, CPU_ADDRESSING_MODE::ZERO_PAGE_X, OOPS::NONE);
+            break;
+        case 0x6F:
+            Execute(OPCODE::RRA, CPU_ADDRESSING_MODE::ABSOLUTE, OOPS::NONE);
+            break;
+        case 0x7F:
+            Execute(OPCODE::RRA, CPU_ADDRESSING_MODE::ABSOLUTE_X, OOPS::NONE);
+            break;
+        case 0x7B:
+            Execute(OPCODE::RRA, CPU_ADDRESSING_MODE::ABSOLUTE_Y, OOPS::NONE);
+            break;
+        case 0x63:
+            Execute(OPCODE::RRA, CPU_ADDRESSING_MODE::INDIRECT_X, OOPS::NONE);
+            break;
+        case 0x73:
+            Execute(OPCODE::RRA, CPU_ADDRESSING_MODE::INDIRECT_Y, OOPS::NONE);
+            break;
         case 0x40:
             Execute(OPCODE::RTI, CPU_ADDRESSING_MODE::IMPLICIT, OOPS::NONE);
             break;
         case 0x60:
             Execute(OPCODE::RTS, CPU_ADDRESSING_MODE::IMPLICIT, OOPS::NONE);
             break;
+        case 0x87:
+            Execute(OPCODE::SAX, CPU_ADDRESSING_MODE::ZERO_PAGE, OOPS::NONE);
+            break;
+        case 0x97:
+            Execute(OPCODE::SAX, CPU_ADDRESSING_MODE::ZERO_PAGE_Y, OOPS::NONE);
+            break;
+        case 0x8F:
+            Execute(OPCODE::SAX, CPU_ADDRESSING_MODE::ABSOLUTE, OOPS::NONE);
+            break;
+        case 0x83:
+            Execute(OPCODE::SAX, CPU_ADDRESSING_MODE::INDIRECT_X, OOPS::NONE);
+            break;
         case 0xE9:
+        case 0xEB:
             Execute(OPCODE::SBC, CPU_ADDRESSING_MODE::IMMEDIATE, OOPS::NONE);
             break;
         case 0xE5:
@@ -842,6 +1032,55 @@ void CPU::Instruction(nes_byte opcode) {
             break;
         case 0x78:
             Execute(OPCODE::SEI, CPU_ADDRESSING_MODE::IMPLICIT, OOPS::NONE);
+            break;
+        case 0x80:
+        case 0x82:
+        case 0x89:
+        case 0xC2:
+        case 0xE2:
+            Execute(OPCODE::SKB, CPU_ADDRESSING_MODE::IMMEDIATE, OOPS::NONE);
+            break;
+        case 0x07:
+            Execute(OPCODE::SLO, CPU_ADDRESSING_MODE::ZERO_PAGE, OOPS::NONE);
+            break;
+        case 0x17:
+            Execute(OPCODE::SLO, CPU_ADDRESSING_MODE::ZERO_PAGE_X, OOPS::NONE);
+            break;
+        case 0x0F:
+            Execute(OPCODE::SLO, CPU_ADDRESSING_MODE::ABSOLUTE, OOPS::NONE);
+            break;
+        case 0x1F:
+            Execute(OPCODE::SLO, CPU_ADDRESSING_MODE::ABSOLUTE_X, OOPS::NONE);
+            break;
+        case 0x1B:
+            Execute(OPCODE::SLO, CPU_ADDRESSING_MODE::ABSOLUTE_Y, OOPS::NONE);
+            break;
+        case 0x03:
+            Execute(OPCODE::SLO, CPU_ADDRESSING_MODE::INDIRECT_X, OOPS::NONE);
+            break;
+        case 0x13:
+            Execute(OPCODE::SLO, CPU_ADDRESSING_MODE::INDIRECT_Y, OOPS::NONE);
+            break;
+        case 0x47:
+            Execute(OPCODE::SRE, CPU_ADDRESSING_MODE::ZERO_PAGE, OOPS::NONE);
+            break;
+        case 0x57:
+            Execute(OPCODE::SRE, CPU_ADDRESSING_MODE::ZERO_PAGE_X, OOPS::NONE);
+            break;
+        case 0x4F:
+            Execute(OPCODE::SRE, CPU_ADDRESSING_MODE::ABSOLUTE, OOPS::NONE);
+            break;
+        case 0x5F:
+            Execute(OPCODE::SRE, CPU_ADDRESSING_MODE::ABSOLUTE_X, OOPS::NONE);
+            break;
+        case 0x5B:
+            Execute(OPCODE::SRE, CPU_ADDRESSING_MODE::ABSOLUTE_Y, OOPS::NONE);
+            break;
+        case 0x43:
+            Execute(OPCODE::SRE, CPU_ADDRESSING_MODE::INDIRECT_X, OOPS::NONE);
+            break;
+        case 0x53:
+            Execute(OPCODE::SRE, CPU_ADDRESSING_MODE::INDIRECT_Y, OOPS::NONE);
             break;
         case 0x85:
             Execute(OPCODE::STA, CPU_ADDRESSING_MODE::ZERO_PAGE, OOPS::NONE);
@@ -901,7 +1140,7 @@ void CPU::Instruction(nes_byte opcode) {
             Execute(OPCODE::TYA, CPU_ADDRESSING_MODE::IMPLICIT, OOPS::NONE);
             break;
         default:
-            printf("ERROR: ILLEGAL OPCODE %x\n", opcode);
+            printf("ERROR: ILLEGAL OPCODE %x at PC %x\n", opcode, this->PC);
             break;
     }
 }
@@ -970,7 +1209,7 @@ void CPU::AND(nes_byte argument) {
     A = result;
 }
 
-void CPU::ASL(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode) {
+nes_byte CPU::ASL(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode) {
     nes_address result = argument << 1;
 
     EvaluateCarry(result);
@@ -983,6 +1222,7 @@ void CPU::ASL(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode) 
         MemoryWrite(address, (nes_byte) result);
     }
 
+    return (nes_byte) result;
 }
 
 void CPU::Branch(nes_byte argument, bool condition, bool& branch_succeeded) {
@@ -1001,16 +1241,12 @@ void CPU::BIT(nes_byte argument) {
 void CPU::BRK(nes_byte argument) {
     // TODO: Implement interrupt hijacking
     // http://wiki.nesdev.com/w/index.php/CPU_interrupts
-    if (!(P & INTERRUPT_DISABLE_FLAG)) {
-        StackPush((nes_byte) (PC >> 8));
-        StackPush((nes_byte) PC);
-        StackPush(P);
-        PC = MemoryRead(IRQ_BRK_VECTOR_LOW) + (MemoryRead(IRQ_BRK_VECTOR_HIGH) << 8);
-        P |= B_FLAG_INST;
-        P |= INTERRUPT_DISABLE_FLAG;
-    } else {
-        printf("IRQ BLOCKED\n");
-    }
+    StackPush((nes_byte) ((PC+1) >> 8));
+    StackPush((nes_byte) (PC+1));
+    P |= B_FLAG_INST;
+    StackPush(P);
+    PC = MemoryRead(IRQ_BRK_VECTOR_LOW) + (MemoryRead(IRQ_BRK_VECTOR_HIGH) << 8);
+    P |= INTERRUPT_DISABLE_FLAG;
 }
 
 void CPU::ClearFlag(nes_byte flag) {
@@ -1023,13 +1259,15 @@ void CPU::Compare(nes_byte argument, nes_byte reg) {
     if ((reg - argument) & 0x80) P|= NEGATIVE_FLAG; else P &= ~NEGATIVE_FLAG;
 }
 
-void CPU::DEC(nes_byte argument, nes_address address) {
+nes_byte CPU::DEC(nes_byte argument, nes_address address) {
     nes_byte result =  argument - (nes_byte) 1;
 
     EvaluateZero(result);
     EvaluateNegative(result);
 
     MemoryWrite(address, result);
+
+    return result;
 }
 
 void CPU::DEX() {
@@ -1059,13 +1297,15 @@ void CPU::EOR(nes_byte argument) {
     A = result;
 }
 
-void CPU::INC(nes_byte argument, nes_address address) {
+nes_byte CPU::INC(nes_byte argument, nes_address address) {
     nes_byte result =  argument + (nes_byte) 1;
 
     EvaluateZero(result);
     EvaluateNegative(result);
 
     MemoryWrite(address, result);
+
+    return result;
 }
 
 void CPU::INX() {
@@ -1103,7 +1343,7 @@ void CPU::Load(nes_byte& reg, nes_byte value) {
     reg = value;
 }
 
-void CPU::LSR(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode) {
+nes_byte CPU::LSR(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode) {
     nes_byte result = argument >> 1;
 
     if (argument & 0x01) P |= CARRY_FLAG; else P &= ~CARRY_FLAG;
@@ -1115,6 +1355,8 @@ void CPU::LSR(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode) 
     } else {
         MemoryWrite(address, (nes_byte) result);
     }
+
+    return result;
 }
 
 void CPU::ORA(nes_byte argument) {
@@ -1135,7 +1377,7 @@ void CPU::PullReg(nes_byte &reg) {
     reg = result;
 }
 
-void CPU::ROL(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode) {
+nes_byte CPU::ROL(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode) {
     nes_byte result = argument << 1;
     if (P & CARRY_FLAG) result |= 0x01;
 
@@ -1148,9 +1390,11 @@ void CPU::ROL(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode) 
     } else {
         MemoryWrite(address, (nes_byte) result);
     }
+
+    return result;
 }
 
-void CPU::ROR(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode) {
+nes_byte CPU::ROR(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode) {
     nes_byte result = argument >> 1;
     if (P & CARRY_FLAG) result |= 0x80;
 
@@ -1163,6 +1407,8 @@ void CPU::ROR(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode) 
     } else {
         MemoryWrite(address, (nes_byte) result);
     }
+
+    return result;
 }
 
 void CPU::Return(bool is_interrupt) {

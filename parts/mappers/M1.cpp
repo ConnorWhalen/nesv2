@@ -10,18 +10,23 @@
 #include <sstream>
 
 
-M1::M1(std::vector<unsigned char> *romBytes, const unsigned char *cartRAM) {
+M1::M1(std::vector<unsigned char> *romBytes, const unsigned char *cartRAM,
+       std::vector<unsigned char> *chrBytes) {
     for (int i = 0; i < romBytes->size(); i++) {
         prgRom[i] = (*romBytes)[i];
     }
     for (int i = 0; i < CART_RAM_SIZE; i++) {
         prgRam[i] = cartRAM[i];
     }
+    for (int i = 0; i < chrBytes->size(); i++) {
+        chr[i] = (*chrBytes)[i];
+    }
     this->prgRomBankCount = romBytes->size()/MAPPER1_BANK_SIZE;
     this->prgRomBank1 = 0;
     this->prgRomBank2 = this->prgRomBankCount-1;
     this->shiftReg = 0x10;
     this->controlReg = 0x0C;
+    this->chrBankCount = chrBytes->size()/MAPPER1_CHR_BANK_SIZE;
     this->ramEnable = true;
 }
 
@@ -30,7 +35,7 @@ std::vector<OutputData>* M1::Serialize() {
     ss << std::hex << this->prgRomBank1 << " " << this->prgRomBank2;
 
     if (prgRam[0] < 0x80) {
-        printf("TEST RESULT: %s\n", &(prgRam[4]));
+        printf("TEST RESULT:\n%s\n", &(prgRam[4]));
     }
 
     std::stringstream cartRamStream;
@@ -82,6 +87,14 @@ void M1::DoWrite(nes_address address, nes_byte value) {
     } else {
         DoShift(address, value);
     }
+}
+
+nes_byte M1::DoChrRead(nes_address address) {
+    return 0; // TODO
+}
+
+void M1::DoChrWrite(nes_address address, nes_byte value) {
+    // TODO
 }
 
 void M1::DoShift(nes_address address, nes_byte value) {

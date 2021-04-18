@@ -25,7 +25,7 @@ TextArea::TextArea(int width, int height) {
         printf( "SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError());
     }
 
-    this->font = font = TTF_OpenFont("/Library/Fonts/Courier New.ttf", FONT_SIZE);
+    this->font = font = TTF_OpenFont("/System/Library/Fonts/Supplemental/Courier New.ttf", FONT_SIZE);
     if (font == nullptr) {
         printf( "Failed to load lazy font! SDL_ttf Error: %s\n", TTF_GetError());
     }

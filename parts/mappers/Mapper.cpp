@@ -19,3 +19,17 @@ void Mapper::Write(nes_address address, nes_byte value) {
     }
     DoWrite(address, value);
 }
+
+nes_byte Mapper::ChrRead(nes_address address) {
+    if (address >= MAPPER_CHR_REGION_SIZE) {
+        printf("ERROR: INVALID MAPPER CHR READ ADDRESS %x\n", address);
+    }
+    return DoChrRead(address);
+}
+
+void Mapper::ChrWrite(nes_address address, nes_byte value) {
+    if (address >= MAPPER_CHR_REGION_SIZE) {
+        printf("ERROR: INVALID MAPPER CHR WRITE ADDRESS %x\n", address);
+    }
+    DoChrWrite(address, value);
+}

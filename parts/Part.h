@@ -31,6 +31,9 @@ public:
         while (step++ < STEPS_PER_TICK) Step();
         step = 0;
     };
+
+    virtual nes_byte Read(nes_address address) { return 0; };
+    virtual void Write(nes_address address, nes_byte value) {}
 protected:
     int step = 0;
     int STEPS_PER_TICK = 0;

@@ -13,7 +13,7 @@
 #include "input/TouchInput.h"
 #include "PartAssembler.h"
 
-constexpr int TEXT_WINDOW_WIDTH = 1000;
+constexpr int TEXT_WINDOW_WIDTH = 1500;
 constexpr int TEXT_WINDOW_HEIGHT = 700;
 constexpr int GAME_WINDOW_WIDTH = 800;
 constexpr int GAME_WINDOW_HEIGHT = 480;
@@ -108,7 +108,8 @@ int main(int argc, char *argv[]) {
             config.Get("apu_type"),
             config.Get("controllers_type"),
             config.Get("speakers_type"),
-            touchInput,
+//            touchInput,
+            keyboard,
             romData
     );
 
@@ -209,6 +210,9 @@ int main(int argc, char *argv[]) {
 
             for (Part *part : *(parts->asVector)) {
                 part->Tick();
+            }
+            if (parts->ppu->DoNMI()) {
+                parts->cpu->NMI();
             }
 
             gameArea->Flip(pixels, NES_WIDTH, NES_HEIGHT);

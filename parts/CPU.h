@@ -66,14 +66,14 @@ enum class OOPS {
 
 enum class OPCODE {
     ADC, AND, ASL, BCC, BCS, BEQ, BIT, BMI, BNE, BPL, BRK, BVC, BVS, CLC,
-    CLD, CLI, CLV, CMP, CPX, CPY, DEC, DEX, DEY, EOR, INC, INX, INY, JMP,
-    JSR, LDA, LDX, LDY, LSR, NOP, ORA, PHA, PHP, PLA, PLP, ROL, ROR, RTI,
-    RTS, SBC, SEC, SED, SEI, STA, STX, STY, TAX, TAY, TSX, TXA, TXS, TYA,
+    CLD, CLI, CLV, CMP, CPX, CPY, DCP, DEC, DEX, DEY, EOR, IGN, INC, INX, INY, ISC, JMP,
+    JSR, LAX, LDA, LDX, LDY, LSR, NOP, ORA, PHA, PHP, PLA, PLP, RLA, ROL, ROR, RRA, RTI,
+    RTS, SAX, SBC, SEC, SED, SEI, SKB, SLO, SRE, STA, STX, STY, TAX, TAY, TSX, TXA, TXS, TYA,
 };
 
 class CPU : public Part {
 public:
-    CPU(Mapper* mapper);
+    CPU(Mapper* mapper, Part* ppu);
     std::vector<OutputData>* Serialize() override;
     void Step() override;
     void Reset();
@@ -92,6 +92,7 @@ private:
     nes_byte S;
     nes_address PC;
     Mapper* mapper;
+    Part* ppu;
     nes_byte RAM[RAM_SIZE];
     int wait_steps;
 
@@ -104,27 +105,27 @@ private:
 
     void ADC(nes_byte argument);
     void AND(nes_byte argument);
-    void ASL(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode);
+    nes_byte ASL(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode);
     void Branch(nes_byte argument, bool condition, bool& branch_succeeded);
     void BIT(nes_byte argument);
     void BRK(nes_byte argument);
     void ClearFlag(nes_byte flag);
     void Compare(nes_byte argument, nes_byte reg);
-    void DEC(nes_byte argument, nes_address address);
+    nes_byte DEC(nes_byte argument, nes_address address);
     void DEX();
     void DEY();
     void EOR(nes_byte argument);
-    void INC(nes_byte argument, nes_address address);
+    nes_byte INC(nes_byte argument, nes_address address);
     void INX();
     void INY();
     void JMP(nes_address address);
     void JSR(nes_address address);
     void Load(nes_byte& reg, nes_byte value);
-    void LSR(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode);
+    nes_byte LSR(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode);
     void ORA(nes_byte argument);
     void PullReg(nes_byte& reg);
-    void ROL(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode);
-    void ROR(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode);
+    nes_byte ROL(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode);
+    nes_byte ROR(nes_byte argument, nes_address address, CPU_ADDRESSING_MODE mode);
     void Return(bool is_interrupt);
     void SBC(nes_byte argument);
     void SetFlag(nes_byte flag);

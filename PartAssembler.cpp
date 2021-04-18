@@ -21,39 +21,45 @@ Parts* PartAssembler::Assemble(
 ) {
     auto parts = new Parts {};
     if (romData->mapper == 0) {
-        parts->mapper = new M0(romData->romBytes, romData->cartRAM);
+        parts->mapper = new M0(romData->romBytes, romData->cartRAM, romData->chrBytes);
     } else if (romData->mapper == 1) {
-        parts->mapper = new M1(romData->romBytes, romData->cartRAM);
+        parts->mapper = new M1(romData->romBytes, romData->cartRAM, romData->chrBytes);
     } else if (romData->mapper == 2) {
-        parts->mapper = new M2(romData->romBytes);
+        parts->mapper = new M2(romData->romBytes, romData->chrBytes);
     } else {
         printf("unknown mapper type %d\n", romData->mapper);
     }
-    if (cpuType == "CPU") {
-        parts->cpu = new CPU(parts->mapper);
-    } else {
-        printf("unknown cpu type %s\n", cpuType.c_str());
-    }
+
     if (ppuType == "PPU") {
         parts->ppu = new PPU();
     } else {
         printf("unknown ppu type %s\n", ppuType.c_str());
     }
+
+    if (cpuType == "CPU") {
+        parts->cpu = new CPU(parts->mapper, parts->ppu);
+    } else {
+        printf("unknown cpu type %s\n", cpuType.c_str());
+    }
+
     if (apuType == "APU") {
         parts->apu = new APU();
     } else {
         printf("unknown apu type %s\n", apuType.c_str());
     }
+
     if (controllersType == "Controllers") {
         parts->controllers = new Controllers(inputDevice);
     } else {
         printf("unknown controllers type %s\n", controllersType.c_str());
     }
+
     if (speakersType == "Speakers") {
         parts->speakers = new Speakers();
     } else {
         printf("unknown speakers type %s\n", speakersType.c_str());
     }
+
     parts->asVector = new std::vector<Part*> {
             parts->cpu,
             parts->ppu,

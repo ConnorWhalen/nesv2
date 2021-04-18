@@ -59,8 +59,10 @@ RomData *parse(const std::string &filename) {
     }
 
     auto cartRAM = new unsigned char[CART_RAM_SIZE];
+    for (int i = 0; i < CART_RAM_SIZE; i++) cartRAM[i] = 0;
     auto romBytes = new std::vector<unsigned char>();
     auto chrBytes = new std::vector<unsigned char>();
+    printf("rom page count: %d\n", programRomPageCount);
     for (int i = 0; i < ROM_PAGE_SIZE*programRomPageCount; i++) {
         inFile.get(inChar);
         romBytes->push_back(inChar);
