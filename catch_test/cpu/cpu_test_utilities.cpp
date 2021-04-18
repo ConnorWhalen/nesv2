@@ -39,6 +39,11 @@ void setResetVector(std::vector<nes_byte>* romBytes, nes_address value) {
     romBytes->at(RESET_VECTOR_LOW-CARTRIDGE_RAM_REGION_END) = (nes_byte) (value & 0xFF);
 }
 
+void setIRQVector(std::vector<nes_byte>* romBytes, nes_address value) {
+    romBytes->at(IRQ_BRK_VECTOR_HIGH-CARTRIDGE_RAM_REGION_END) = (nes_byte) (value >> 8);
+    romBytes->at(IRQ_BRK_VECTOR_LOW-CARTRIDGE_RAM_REGION_END) = (nes_byte) (value & 0xFF);
+}
+
 void relativeRomWrite(std::vector<nes_byte>* romBytes, nes_address address, nes_byte value) {
     romBytes->at(address - CARTRIDGE_RAM_REGION_END) = value;
 }
