@@ -15,6 +15,7 @@ Parts* PartAssembler::Assemble(
         const std::string& ppuType,
         const std::string& apuType,
         const std::string& controllersType,
+        const std::string& displayType,
         const std::string& speakersType,
         Input *inputDevice,
         RomParser::RomData *romData
@@ -30,8 +31,14 @@ Parts* PartAssembler::Assemble(
         printf("unknown mapper type %d\n", romData->mapper);
     }
 
+    if (displayType == "Display") {
+        parts->display = new Display();
+    } else {
+        printf("unknown display type %s\n", displayType.c_str());
+    }
+
     if (ppuType == "PPU") {
-        parts->ppu = new PPU();
+        parts->ppu = new PPU(parts->display);
     } else {
         printf("unknown ppu type %s\n", ppuType.c_str());
     }
@@ -66,7 +73,8 @@ Parts* PartAssembler::Assemble(
             parts->apu,
             parts->controllers,
             parts->mapper,
-            parts->speakers
+            parts->display,
+            parts->speakers,
     };
     return parts;
 }

@@ -15,6 +15,7 @@
 #include "parts/APU.h"
 #include "parts/Controllers.h"
 #include "parts/mappers/Mapper.h"
+#include "parts/Display.h"
 #include "parts/Speakers.h"
 #include "input/Input.h"
 #include "RomParser.h"
@@ -25,6 +26,7 @@ struct Parts {
     APU* apu;
     Controllers* controllers;
     Mapper* mapper;
+    Display* display;
     Speakers* speakers;
     std::vector<Part*>* asVector;
 };
@@ -36,6 +38,7 @@ public:
             const std::string& ppuType,
             const std::string& apuType,
             const std::string& controllersType,
+            const std::string& displayType,
             const std::string& speakersType,
             Input *inputDevice,
             RomParser::RomData *romData

@@ -48,8 +48,8 @@ std::vector<OutputData>* M0::Serialize() {
     }
 
     return new std::vector<OutputData> {
-        {"MAPPER 0 ROM DUMP", stream.str()},
-        {"MAPPER 0 RAM DUMP", cartRamStream.str()}
+        // {"MAPPER 0 ROM DUMP", stream.str()},
+        // {"MAPPER 0 RAM DUMP", cartRamStream.str()}
     };
 }
 

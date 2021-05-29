@@ -107,6 +107,7 @@ int main(int argc, char *argv[]) {
             config.Get("ppu_type"),
             config.Get("apu_type"),
             config.Get("controllers_type"),
+            config.Get("display_type"),
             config.Get("speakers_type"),
 //            touchInput,
             keyboard,
@@ -155,6 +156,7 @@ int main(int argc, char *argv[]) {
     gameRect->x = GAME_LEFT;
     gameRect->y = GAME_TOP;
     auto gameArea = new GameArea(gameRect, gameWindow->GetRenderer());
+    parts->display->SetPixelFormat(gameArea->GetTexture());
     gameWindow->AddWindowArea(gameArea);
     gameWindow->AddWindowArea(aButton);
     gameWindow->AddWindowArea(bButton);
@@ -164,13 +166,6 @@ int main(int argc, char *argv[]) {
     gameWindow->AddWindowArea(downButton);
     gameWindow->AddWindowArea(leftButton);
     gameWindow->AddWindowArea(rightButton);
-
-    // Sample pixels
-    Uint32 pixels[NES_WIDTH*NES_HEIGHT];
-    for (int i = 0; i < NES_WIDTH*NES_HEIGHT; i++) pixels[i] = 0;
-    Uint32 pixelFormatCode;
-    SDL_QueryTexture(gameArea->GetTexture(), &pixelFormatCode, nullptr, nullptr, nullptr);
-    SDL_PixelFormat *pixelFormat = SDL_AllocFormat(pixelFormatCode);
 
     bool quit = false;
     SDL_Event inputEvent;
@@ -193,21 +188,6 @@ int main(int argc, char *argv[]) {
                 input->Apply(inputEvent);
             }
         } else {
-            // Update sample pixels
-            double offset = 0;
-            Uint8 val = 0;
-            for (int i = 0; i < NES_HEIGHT; i++) {
-                for (int j = 0; j < NES_WIDTH; j++) {
-                    offset = (double)(i+j)/(double)(NES_WIDTH+NES_HEIGHT);
-                    val = (Uint8)((double)fps_index*offset);
-                    pixels[i*NES_WIDTH+j] = SDL_MapRGB(
-                            pixelFormat,
-                            (Uint8)((double)fps_index*offset),
-                            (Uint8)((double)fps_index*offset),
-                            (Uint8)((double)fps_index*offset));
-                }
-            }
-
             for (Part *part : *(parts->asVector)) {
                 part->Tick();
             }
@@ -215,7 +195,7 @@ int main(int argc, char *argv[]) {
                 parts->cpu->NMI();
             }
 
-            gameArea->Flip(pixels, NES_WIDTH, NES_HEIGHT);
+            gameArea->Flip(parts->display->GetPixels(), NES_WIDTH, NES_HEIGHT);
 
             textWindow->Clear();
             for (Part *part : *(parts->asVector)) {

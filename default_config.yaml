@@ -11,6 +11,7 @@ cpu_type: CPU
 ppu_type: PPU
 apu_type: APU
 controllers_type: Controllers
+display_type: Display
 speakers_type: Speakers
 
 rom_file: Mega Man (USA).nes

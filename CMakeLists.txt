@@ -23,13 +23,21 @@ if (NOT YAML_CPP)
     message(FATAL_ERROR "YAML_CPP not found")
 endif()
 
-add_executable(nesv2 main.cpp RomParser.cpp RomParser.h UI/TextArea.cpp UI/TextArea.h UI/TextWindow.cpp UI/TextWindow.h
-        parts/Part.h parts/OutputData.h parts/CPU.h parts/PPU.h parts/APU.h parts/Controllers.h parts/mappers/Mapper.h
-        parts/Speakers.h PartAssembler.h PartAssembler.cpp input/KeyboardInput.h input/KeyboardInput.cpp input/Input.h
-        parts/Controllers.cpp Config.cpp Config.h UI/Window.cpp UI/Window.h UI/GameArea.cpp UI/GameArea.h
-        input/TouchInput.cpp input/TouchInput.h UI/WindowArea.h UI/Button.cpp UI/Button.h parts/mappers/M0.cpp
-        parts/mappers/M0.h parts/mappers/M2.cpp parts/mappers/M2.h parts/mappers/Mapper.cpp parts/CPU.cpp
-        parts/mappers/M1.cpp parts/mappers/M1.h parts/PPU.cpp)
+add_executable(nesv2 main.cpp
+        RomParser.cpp RomParser.h PartAssembler.h PartAssembler.cpp Config.cpp Config.h
+        UI/TextArea.cpp UI/TextArea.h UI/TextWindow.cpp UI/TextWindow.h
+        UI/Window.cpp UI/Window.h UI/GameArea.cpp UI/GameArea.h UI/WindowArea.h
+        UI/Button.cpp UI/Button.h
+        parts/Part.h parts/OutputData.h parts/CPU.h parts/PPU.h parts/APU.h
+        parts/Controllers.h parts/Speakers.h parts/Controllers.cpp
+        parts/CPU.cpp parts/PPU.cpp parts/Display.h parts/Display.cpp parts/Colour.h
+        parts/Colour.cpp
+        parts/mappers/Mapper.h parts/mappers/Mapper.cpp parts/mappers/M0.cpp
+        parts/mappers/M0.h parts/mappers/M2.cpp parts/mappers/M2.h parts/mappers/M1.cpp
+        parts/mappers/M1.h
+        input/KeyboardInput.h input/KeyboardInput.cpp input/Input.h input/TouchInput.cpp
+        input/TouchInput.h
+        )
 
 message("${SDL2}")
 message("${SDL_TTF}")

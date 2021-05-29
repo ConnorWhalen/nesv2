@@ -40,8 +40,8 @@ std::vector<OutputData>* CPU::Serialize() {
     }
 
     return new std::vector<OutputData> {
-            {"A  X  Y  S  P  PC", registerStream.str()},
-            {"RAM DUMP", ramStream.str()}
+            // {"A  X  Y  S  P  PC", registerStream.str()},
+            // {"RAM DUMP", ramStream.str()}
     };
 };
 
