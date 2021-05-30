@@ -20,6 +20,7 @@ public:
     Display();
 
     void SetPixelFormat(SDL_Texture *gameTexture);
+    void SetColourEmphasis(bool r, bool g, bool b);
     void SetPixel(int x, int y, unsigned char colourValue);
     Uint32* GetPixels();
 

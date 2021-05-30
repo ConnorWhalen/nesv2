@@ -30,9 +30,6 @@ public:
 private:
     Display* display;
 
-    unsigned char colour;
-    int counter;
-
     nes_byte ppuStatus;
     nes_byte ppuCtrl;
     nes_byte ppuMask;
@@ -40,11 +37,29 @@ private:
     nes_byte ppuScroll;
     nes_byte ppuAddr;
     nes_byte ppuData;
-    bool oddFrame;
     nes_byte patternTable[PATTERN_TABLE_SIZE*2];
     nes_byte nameTable[NAME_TABLE_SIZE*4];
     nes_byte paletteIndices[PALETTE_INDICES_SIZE];
     nes_byte oam[0x100];
+
+    bool ppuMask_showSprites;
+    bool ppuMask_showBackground;
+    bool ppuMask_showSpritesLeft8;
+    bool ppuMask_showBackgroundLeft8;
+    bool ppuMask_greyscale;
+
+    bool oddFrame;
+    int scanline;
+    nes_byte fineXScroll;
+    unsigned char spriteCount;
+    bool hasSpriteZero;
+
+    nes_byte currentTiles[24];
+    nes_byte currentSprites[0x20];
+    nes_byte spriteTiles[0x10];
+
+    void DrawPixel(nes_byte x);
+    void SetDisplayPixel(int x, int y, nes_byte colourAddress=0);
 };
 
 #endif //NESV2_PPU_H
