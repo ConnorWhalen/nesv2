@@ -15,8 +15,8 @@ constexpr nes_address MAPPER0_SIZE = 0x8000;
 
 class M0 : public Mapper {
 public:
-    explicit M0(std::vector<unsigned char> *romBytes, const unsigned char *cartRAM,
-                std::vector<unsigned char> *chrBytes);
+    explicit M0(const std::vector<unsigned char> &romBytes, const unsigned char *cartRAM,
+                const std::vector<unsigned char> &chrBytes);
     std::vector<OutputData>* Serialize() override;
     nes_byte DoRead(nes_address address) override;
     void DoWrite(nes_address address, nes_byte value) override;

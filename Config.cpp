@@ -18,10 +18,10 @@ Config::Config(const std::string &override_filename) {
 }
 
 std::string Config::Get(const std::string &key, const std::string &default_value) {
-    if (YAML::Node override_node = override_config[key]) {
-        return override_node.as<std::string>();
-    } else if (YAML::Node default_node = default_config[key]) {
-        return default_node.as<std::string>();
+    if (override_config[key]) {
+        return override_config[key].as<std::string>();
+    } else if (default_config[key]) {
+        return default_config[key].as<std::string>();
     }
     printf("Config value %s not found!\nUsing default value: %s\n", key.c_str(), default_value.c_str());
     return default_value;

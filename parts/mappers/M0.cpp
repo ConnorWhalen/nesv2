@@ -9,17 +9,17 @@
 #include <iomanip>
 #include <sstream>
 
-M0::M0(std::vector<unsigned char> *romBytes, const unsigned char *cartRAM,
-       std::vector<unsigned char> *chrBytes) {
-    int s = romBytes->size();
+M0::M0(const std::vector<unsigned char> &romBytes, const unsigned char *cartRAM,
+       const std::vector<unsigned char> &chrBytes) {
+    int s = romBytes.size();
     for (int i = 0; i < MAPPER0_SIZE; i++) {
-        prgRom[i] = (*romBytes)[i % s];
+        prgRom[i] = romBytes[i % s];
     }
     for (int i = 0; i < CART_RAM_SIZE; i++) {
         prgRam[i] = cartRAM[i];
     }
     for (int i = 0; i < MAPPER_CHR_REGION_SIZE; i++) {
-        chr[i] = (*chrBytes)[i % s];
+        chr[i] = chrBytes[i % s];
     }
 }
 
@@ -48,8 +48,8 @@ std::vector<OutputData>* M0::Serialize() {
     }
 
     return new std::vector<OutputData> {
-        // {"MAPPER 0 ROM DUMP", stream.str()},
-        // {"MAPPER 0 RAM DUMP", cartRamStream.str()}
+        {"MAPPER 0 ROM DUMP", stream.str()},
+        {"MAPPER 0 RAM DUMP", cartRamStream.str()}
     };
 }
 

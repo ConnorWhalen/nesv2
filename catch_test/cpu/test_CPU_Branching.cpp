@@ -9,6 +9,8 @@
 #include "cpu_test_utilities.h"
 
 #include "../../parts/CPU.h"
+#include "../../parts/NullDisplay.h"
+#include "../../parts/PPU.h"
 #include "../../parts/mappers/M0.h"
 
 TEST_CASE("CPU branching") {
@@ -16,6 +18,9 @@ TEST_CASE("CPU branching") {
     auto cartRAM = new unsigned char[CART_RAM_SIZE];
     for (int i = 0; i < CART_RAM_SIZE; i++) cartRAM[i] = 0;
     auto chrBytes = new std::vector<nes_byte>(MAPPER_CHR_REGION_SIZE);
+
+    NullDisplay display;
+    PPU ppu(display, false, false);
 
     SECTION("JMP ABS") {
         nes_address program_start = 0x8000;
@@ -34,8 +39,8 @@ TEST_CASE("CPU branching") {
         relativeRomWrite(romBytes, program_index++, 0x28);
         relativeRomWrite(romBytes, program_index++, 0x06);
 
-        M0 mapper(romBytes, cartRAM, chrBytes);
-        CPU cpu(&mapper, nullptr);
+        M0 mapper(*romBytes, cartRAM, *chrBytes);
+        CPU cpu(mapper, ppu);
 
         for (int i = 0; i < 10; i++) {
             cpu.Step();
@@ -77,8 +82,8 @@ TEST_CASE("CPU branching") {
         relativeRomWrite(romBytes, program_index++, 0x28);
         relativeRomWrite(romBytes, program_index++, 0x06);
 
-        M0 mapper(romBytes, cartRAM, chrBytes);
-        CPU cpu(&mapper, nullptr);
+        M0 mapper(*romBytes, cartRAM, *chrBytes);
+        CPU cpu(mapper, ppu);
 
         for (int i = 0; i < 24; i++) {
             cpu.Step();
@@ -120,8 +125,8 @@ TEST_CASE("CPU branching") {
         relativeRomWrite(romBytes, program_index++, 0xFF);
         relativeRomWrite(romBytes, program_index++, 0x06);
 
-        M0 mapper(romBytes, cartRAM, chrBytes);
-        CPU cpu(&mapper, nullptr);
+        M0 mapper(*romBytes, cartRAM, *chrBytes);
+        CPU cpu(mapper, ppu);
 
         for (int i = 0; i < 24; i++) {
             cpu.Step();
@@ -152,8 +157,8 @@ TEST_CASE("CPU branching") {
         program_index += 0x7F;
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
 
-        M0 mapper(romBytes, cartRAM, chrBytes);
-        CPU cpu(&mapper, nullptr);
+        M0 mapper(*romBytes, cartRAM, *chrBytes);
+        CPU cpu(mapper, ppu);
 
         for (int i = 0; i < 15; i++) {
             cpu.Step();
@@ -183,8 +188,8 @@ TEST_CASE("CPU branching") {
         program_index += 0x7F;
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
 
-        M0 mapper(romBytes, cartRAM, chrBytes);
-        CPU cpu(&mapper, nullptr);
+        M0 mapper(*romBytes, cartRAM, *chrBytes);
+        CPU cpu(mapper, ppu);
 
         for (int i = 0; i < 15; i++) {
             cpu.Step();
@@ -215,8 +220,8 @@ TEST_CASE("CPU branching") {
         program_index += 0x7F;
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
 
-        M0 mapper(romBytes, cartRAM, chrBytes);
-        CPU cpu(&mapper, nullptr);
+        M0 mapper(*romBytes, cartRAM, *chrBytes);
+        CPU cpu(mapper, ppu);
 
         for (int i = 0; i < 15; i++) {
             cpu.Step();
@@ -249,8 +254,8 @@ TEST_CASE("CPU branching") {
         program_index += 0x7F;
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
 
-        M0 mapper(romBytes, cartRAM, chrBytes);
-        CPU cpu(&mapper, nullptr);
+        M0 mapper(*romBytes, cartRAM, *chrBytes);
+        CPU cpu(mapper, ppu);
 
         for (int i = 0; i < 17; i++) {
             cpu.Step();
@@ -270,28 +275,93 @@ TEST_CASE("CPU branching") {
         nes_byte ram[RAM_SIZE];
         for (int i = 0; i < RAM_SIZE; i++) ram[i] = 0;
 
-        ram[0x0728] = 0x40; // RTI
         relativeRomWrite(romBytes, program_index++, 0xA9); // LDA imm
         relativeRomWrite(romBytes, program_index++, 0x40); // store an RTI
         relativeRomWrite(romBytes, program_index++, 0x8D); // STA abs
         relativeRomWrite(romBytes, program_index++, 0x28);
         relativeRomWrite(romBytes, program_index++, 0x07);
+        relativeRomWrite(romBytes, program_index++, 0x00); // BRK, suppressed
+        relativeRomWrite(romBytes, program_index++, 0x58); // CLI
         relativeRomWrite(romBytes, program_index++, 0x00); // BRK
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP, skipped
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
 
-        ram[0x01FD] = 0x80;
-        ram[0x01FC] = 0x07;
-        ram[0x01FB] = 0x34;
+        ram[0x0728] = 0x40; // RTI
 
-        M0 mapper(romBytes, cartRAM, chrBytes);
-        CPU cpu(&mapper, nullptr);
+        M0 mapper(*romBytes, cartRAM, *chrBytes);
+        CPU cpu(mapper, ppu);
 
         for (int i = 0; i < 13; i++) {
             cpu.Step();
         }
 
         auto output = cpu.Serialize();
+        REQUIRE(output->at(0).body == getRegisterString(
+                0x40, INITIAL_X, INITIAL_Y, INITIAL_S, INITIAL_P, program_start+6));
+        REQUIRE(output->at(1).body == getRamString(ram));
+        delete output;
+
+        for (int i = 0; i < 9; i++) {
+            cpu.Step();
+        }
+
+        ram[0x01FD] = 0x80;
+        ram[0x01FC] = 0x09;
+        ram[0x01FB] = 0x30;
+
+        output = cpu.Serialize();
+        REQUIRE(output->at(0).body == getRegisterString(
+                0x40, INITIAL_X, INITIAL_Y, INITIAL_S - 3, INITIAL_P, 0x0728));
+        REQUIRE(output->at(1).body == getRamString(ram));
+        delete output;
+
+        for (int i = 0; i < 7; i++) {
+            cpu.Step();
+        }
+
+        output = cpu.Serialize();
+        REQUIRE(output->at(0).body == getRegisterString(
+                0x40, INITIAL_X, INITIAL_Y, INITIAL_S, INITIAL_P - INTERRUPT_DISABLE_FLAG, program_index));
+        REQUIRE(output->at(1).body == getRamString(ram));
+        delete output;
+    }
+
+    SECTION("NMI/RTI") {
+        nes_address program_start = 0x8000;
+        nes_address program_index = program_start;
+        setResetVector(romBytes, program_start);
+        setNMIVector(romBytes, 0x0728);
+        nes_byte ram[RAM_SIZE];
+        for (int i = 0; i < RAM_SIZE; i++) ram[i] = 0;
+
+        relativeRomWrite(romBytes, program_index++, 0xA9); // LDA imm
+        relativeRomWrite(romBytes, program_index++, 0x40); // store an RTI
+        relativeRomWrite(romBytes, program_index++, 0x8D); // STA abs
+        relativeRomWrite(romBytes, program_index++, 0x28);
+        relativeRomWrite(romBytes, program_index++, 0x07);
+        relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
+
+        ram[0x0728] = 0x40; // RTI
+
+        M0 mapper(*romBytes, cartRAM, *chrBytes);
+        CPU cpu(mapper, ppu);
+
+        for (int i = 0; i < 6; i++) {
+            cpu.Step();
+        }
+
+        auto output = cpu.Serialize();
+        REQUIRE(output->at(0).body == getRegisterString(
+                0x40, INITIAL_X, INITIAL_Y, INITIAL_S, INITIAL_P, program_start+5));
+        REQUIRE(output->at(1).body == getRamString(ram));
+        delete output;
+
+        cpu.NMI();
+        ram[0x01FD] = 0x80;
+        ram[0x01FC] = 0x05;
+        ram[0x01FB] = 0x34;
+
+        output = cpu.Serialize();
         REQUIRE(output->at(0).body == getRegisterString(
                 0x40, INITIAL_X, INITIAL_Y, INITIAL_S - 3, INITIAL_P, 0x0728));
         REQUIRE(output->at(1).body == getRamString(ram));
@@ -329,8 +399,8 @@ TEST_CASE("CPU branching") {
         ram[0x01FD] = 0x80;
         ram[0x01FC] = 0x07;
 
-        M0 mapper(romBytes, cartRAM, chrBytes);
-        CPU cpu(&mapper, nullptr);
+        M0 mapper(*romBytes, cartRAM, *chrBytes);
+        CPU cpu(mapper, ppu);
 
         for (int i = 0; i < 7; i++) {
             cpu.Step();

@@ -34,6 +34,11 @@ std::string getRamString(nes_byte ram[]) {
     return ramStream.str();
 }
 
+void setNMIVector(std::vector<nes_byte>* romBytes, nes_address value) {
+    romBytes->at(NMI_VECTOR_HIGH-CARTRIDGE_RAM_REGION_END) = (nes_byte) (value >> 8);
+    romBytes->at(NMI_VECTOR_LOW-CARTRIDGE_RAM_REGION_END) = (nes_byte) (value & 0xFF);
+}
+
 void setResetVector(std::vector<nes_byte>* romBytes, nes_address value) {
     romBytes->at(RESET_VECTOR_HIGH-CARTRIDGE_RAM_REGION_END) = (nes_byte) (value >> 8);
     romBytes->at(RESET_VECTOR_LOW-CARTRIDGE_RAM_REGION_END) = (nes_byte) (value & 0xFF);

@@ -18,6 +18,8 @@ public:
            const std::string& onButtonImagePath, const std::string& offButtonImagePath, Input* input,
            InputData buttonMask);
 protected:
+    // TODO
+    // void Destroy();
     void Render(SDL_Renderer* renderer) override;
 private:
     SDL_Texture* offTexture;

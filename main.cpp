@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     }
 
     printf("Loading ROM file %s\n", rom_file.c_str());
-    RomParser::RomData *romData = RomParser::parse(rom_file);
+    RomParser::RomData romData = RomParser::parse(rom_file);
 
     auto keyboard = new KeyboardInput(
             SDL_GetKeyFromName(config.Get("a_button").c_str()),
@@ -176,6 +176,7 @@ int main(int argc, char *argv[]) {
     int fps_index = 0;
     double fps_buffer[FPS_BUFFER];
     for (int i = 0; i < FPS_BUFFER; i++) fps_buffer[i] = 0;
+    printf("%i\n", CLOCK_FREQUENCY/FPS);
     while (!quit) {
         if (SDL_PollEvent(&inputEvent)) {
             if (inputEvent.type == SDL_QUIT ||
@@ -188,12 +189,14 @@ int main(int argc, char *argv[]) {
                 input->Apply(inputEvent);
             }
         } else {
-            for (Part *part : *(parts->asVector)) {
-                part->Tick();
+            for (int i = 0; i < CLOCK_FREQUENCY/FPS; i++) {
+                for (Part *part : *(parts->asVector)) {
+                    if (part->CYCLES_PER_STEP > 0 && i % part->CYCLES_PER_STEP == 0) {
+                        part->Step();
+                    }
+                }
             }
-            if (parts->ppu->DoNMI()) {
-                parts->cpu->NMI();
-            }
+            parts->ppu->dumpPatternTable();
 
             gameArea->Flip(parts->display->GetPixels(), NES_WIDTH, NES_HEIGHT);
 

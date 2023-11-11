@@ -4,12 +4,13 @@
 // Created by Connor Whalen on 2019-10-13.
 //
 
-#define CATCH_CONFIG_MAIN
 #include "../catch.hpp"
 
 #include "cpu_test_utilities.h"
 
 #include "../../parts/CPU.h"
+#include "../../parts/NullDisplay.h"
+#include "../../parts/PPU.h"
 #include "../../parts/mappers/M0.h"
 
 TEST_CASE("CPU functionality") {
@@ -18,9 +19,12 @@ TEST_CASE("CPU functionality") {
     for (int i = 0; i < CART_RAM_SIZE; i++) cartRAM[i] = 0;
     auto chrBytes = new std::vector<nes_byte>(MAPPER_CHR_REGION_SIZE);
 
+    NullDisplay display;
+    PPU ppu(display, false, false);
+
     SECTION("CPU INITIALIZATION") {
-        M0 mapper(romBytes, cartRAM, chrBytes);
-        CPU cpu(&mapper, nullptr);
+        M0 mapper(*romBytes, cartRAM, *chrBytes);
+        CPU cpu(mapper, ppu);
 
         auto output = cpu.Serialize();
         REQUIRE(output->at(0).body == getRegisterString(
@@ -42,8 +46,8 @@ TEST_CASE("CPU functionality") {
         relativeRomWrite(romBytes, program_index++, 0x08); // PHP
         relativeRomWrite(romBytes, program_index++, 0x38); // SEC
 
-        M0 mapper(romBytes, cartRAM, chrBytes);
-        CPU cpu(&mapper, nullptr);
+        M0 mapper(*romBytes, cartRAM, *chrBytes);
+        CPU cpu(mapper, ppu);
 
         for (int i = 0; i < 9; i++) {
             cpu.Step();
@@ -71,8 +75,8 @@ TEST_CASE("CPU functionality") {
             relativeRomWrite(romBytes, program_index++, (nes_byte) (i & 0xFF));
             relativeRomWrite(romBytes, program_index++, (nes_byte) (i >> 8));
         }
-        M0 mapper(romBytes, cartRAM, chrBytes);
-        CPU cpu(&mapper, nullptr);
+        M0 mapper(*romBytes, cartRAM, *chrBytes);
+        CPU cpu(mapper, ppu);
 
         auto output = cpu.Serialize();
         REQUIRE(output->at(0).body == getRegisterString(
@@ -95,7 +99,7 @@ TEST_CASE("CPU functionality") {
         nes_address program_index = program_start;
         setResetVector(romBytes, program_start);
         nes_byte ram[RAM_SIZE];
-        for (nes_byte v : ram) v = 0;
+        for (nes_byte &v : ram) v = 0;
         ram[0] = (nes_byte) (rand() % 0x7D) + 1;
         relativeRomWrite(romBytes, program_index++, 0xA9); // LDA imm
         relativeRomWrite(romBytes, program_index++, ram[0]);
@@ -111,8 +115,8 @@ TEST_CASE("CPU functionality") {
             relativeRomWrite(romBytes, program_index++, (nes_byte) ((i+1) >> 8));
             ram[i+1] = ram[0];
         }
-        M0 mapper(romBytes, cartRAM, chrBytes);
-        CPU cpu(&mapper, nullptr);
+        M0 mapper(*romBytes, cartRAM, *chrBytes);
+        CPU cpu(mapper, ppu);
 
         auto output = cpu.Serialize();
         REQUIRE(output->at(0).body == getRegisterString(
@@ -144,8 +148,8 @@ TEST_CASE("CPU functionality") {
             relativeRomWrite(romBytes, program_index++, (nes_byte) ((i*RAM_SIZE + i) & 0xFF));
             relativeRomWrite(romBytes, program_index++, (nes_byte) ((i*RAM_SIZE + i) >> 8));
         }
-        M0 mapper(romBytes, cartRAM, chrBytes);
-        CPU cpu(&mapper, nullptr);
+        M0 mapper(*romBytes, cartRAM, *chrBytes);
+        CPU cpu(mapper, ppu);
 
         auto output = cpu.Serialize();
         REQUIRE(output->at(0).body == getRegisterString(

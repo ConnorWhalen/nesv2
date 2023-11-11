@@ -9,6 +9,7 @@
 
 #include "OutputData.h"
 #include "Part.h"
+#include "PPU.h"
 #include "mappers/Mapper.h"
 
 constexpr nes_address NMI_VECTOR_LOW = 0xFFFA;
@@ -73,8 +74,10 @@ enum class OPCODE {
 
 class CPU : public Part {
 public:
-    CPU(Mapper* mapper, Part* ppu);
+    CPU(Mapper &mapper, PPU &ppu);
     std::vector<OutputData>* Serialize() override;
+    virtual nes_byte Read(nes_address address) override;
+    virtual void Write(nes_address address, nes_byte value) override;
     void Step() override;
     void Reset();
     void NMI();
@@ -91,8 +94,8 @@ private:
     nes_byte P;
     nes_byte S;
     nes_address PC;
-    Mapper* mapper;
-    Part* ppu;
+    Mapper &mapper;
+    PPU &ppu;
     nes_byte RAM[RAM_SIZE];
     int wait_steps;
 

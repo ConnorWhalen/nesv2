@@ -31,13 +31,18 @@ add_executable(nesv2 main.cpp
         parts/Part.h parts/OutputData.h parts/CPU.h parts/PPU.h parts/APU.h
         parts/Controllers.h parts/Speakers.h parts/Controllers.cpp
         parts/CPU.cpp parts/PPU.cpp parts/Display.h parts/Display.cpp parts/Colour.h
-        parts/Colour.cpp
+        parts/Colour.cpp parts/NullPPU.h parts/NullPPU.cpp
         parts/mappers/Mapper.h parts/mappers/Mapper.cpp parts/mappers/M0.cpp
         parts/mappers/M0.h parts/mappers/M2.cpp parts/mappers/M2.h parts/mappers/M1.cpp
         parts/mappers/M1.h
+        parts/PartUtilities.h parts/PartUtilities.cpp
         input/KeyboardInput.h input/KeyboardInput.cpp input/Input.h input/TouchInput.cpp
         input/TouchInput.h
         )
+
+set(CMAKE_BUILD_TYPE Debug)
+SET(CMAKE_CXX_FLAGS "-O0")
+SET(CMAKE_C_FLAGS "-O0")
 
 message("${SDL2}")
 message("${SDL_TTF}")

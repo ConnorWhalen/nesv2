@@ -13,16 +13,16 @@
 
 class Display : public Part {
 public:
-    std::vector<OutputData>* Serialize() override {
+    virtual std::vector<OutputData>* Serialize() override {
         return new std::vector<OutputData>();
     };
 
     Display();
 
-    void SetPixelFormat(SDL_Texture *gameTexture);
-    void SetColourEmphasis(bool r, bool g, bool b);
-    void SetPixel(int x, int y, unsigned char colourValue);
-    Uint32* GetPixels();
+    virtual void SetPixelFormat(SDL_Texture *gameTexture);
+    virtual void SetColourEmphasis(bool r, bool g, bool b);
+    virtual void SetPixel(int x, int y, unsigned char colourValue);
+    virtual Uint32* GetPixels();
 
 private:
     Uint32* pixels;

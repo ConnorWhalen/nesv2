@@ -13,6 +13,7 @@
 
 std::string getRegisterString(nes_byte A, nes_byte X, nes_byte Y, nes_byte S, nes_byte P, nes_address PC);
 std::string getRamString(nes_byte ram[]);
+void setNMIVector(std::vector<nes_byte>* romBytes, nes_address value);
 void setResetVector(std::vector<nes_byte>* romBytes, nes_address value);
 void setIRQVector(std::vector<nes_byte>* romBytes, nes_address value);
 void relativeRomWrite(std::vector<nes_byte>* romBytes, nes_address address, nes_byte value);

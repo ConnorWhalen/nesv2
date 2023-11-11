@@ -9,11 +9,12 @@
 #include <iomanip>
 #include <sstream>
 
-CPU::CPU(Mapper* mapper, Part* ppu) {
-    this->mapper = mapper;
-    this->ppu = ppu;
+CPU::CPU(Mapper &mapper, PPU &ppu) 
+    : mapper(mapper), ppu(ppu)
+{
     // http://wiki.nesdev.com/w/index.php/CPU
-    this->STEPS_PER_TICK = (CLOCK_FREQUENCY/12)/FPS;
+    this->CYCLES_PER_STEP = 12;
+    this->STEPS_PER_TICK = (CLOCK_FREQUENCY/CYCLES_PER_STEP)/FPS;
     this->Reset();
     // this->PC = 0xC000; // for nestest.nes
     for (int i = 0; i < RAM_SIZE; i++) this->RAM[i] = 0;
@@ -40,12 +41,15 @@ std::vector<OutputData>* CPU::Serialize() {
     }
 
     return new std::vector<OutputData> {
-            // {"A  X  Y  S  P  PC", registerStream.str()},
-            // {"RAM DUMP", ramStream.str()}
+            {"A  X  Y  S  P  PC", registerStream.str()},
+            {"RAM DUMP", ramStream.str()}
     };
 };
 
 void CPU::Step() {
+    if (ppu.DoNMI()) {
+        NMI();
+    }
     if (--this->wait_steps < 1) {
         nes_byte opcode = MemoryRead(PC++);
         // printf("%x\n", opcode);
@@ -73,18 +77,27 @@ void CPU::NMI() {
     P |= INTERRUPT_DISABLE_FLAG;
 }
 
+nes_byte CPU::Read(nes_address address) {
+    return MemoryRead(address);
+}
+
+void CPU::Write(nes_address address, nes_byte value) {
+    MemoryWrite(address, value);
+}
+
 nes_byte CPU::MemoryRead(nes_address address) {
     if (address < RAM_SEGMENT_END) {
         return RAM[address % RAM_SIZE];
     } else if (address < PPU_REGISTERS_END) {
-        return ppu->Read(address - RAM_SEGMENT_END);
+        // printf("READ from %x\n", address);
+        return ppu.Read(address - RAM_SEGMENT_END);
     } else if (address < APU_REGISTERS_END) {
         return 0; // TODO: APU read
     } else if (address < DISABLED_REGION_END) {
         printf("WARNING: READ FROM DISABLED REGION ADDRESS %x\n", address);
         return 0;
     } else {
-        return mapper->Read(address);
+        return mapper.Read(address);
     }
 }
 
@@ -92,13 +105,18 @@ void CPU::MemoryWrite(nes_address address, nes_byte value) {
     if (address < RAM_SEGMENT_END) {
         RAM[address % RAM_SIZE] = value;
     } else if (address < PPU_REGISTERS_END) {
-        ppu->Write(address - RAM_SEGMENT_END, value);
+        // printf("WRITE %x to %x\n", value, address);
+        ppu.Write(address - RAM_SEGMENT_END, value);
     } else if (address < APU_REGISTERS_END) {
         // TODO: APU write
+        if (address == 0x4014) {
+            ppu.OAMDMA(value, this);
+            wait_steps += 513;
+        }
     } else if (address < DISABLED_REGION_END) {
         printf("WARNING: WRITE TO DISABLED REGION ADDRESS %x VALUE %x\n", address, value);
     } else {
-        return mapper->Write(address, value);
+        return mapper.Write(address, value);
     }
 }
 
@@ -1241,12 +1259,14 @@ void CPU::BIT(nes_byte argument) {
 void CPU::BRK(nes_byte argument) {
     // TODO: Implement interrupt hijacking
     // http://wiki.nesdev.com/w/index.php/CPU_interrupts
-    StackPush((nes_byte) ((PC+1) >> 8));
-    StackPush((nes_byte) (PC+1));
-    P |= B_FLAG_INST;
-    StackPush(P);
-    PC = MemoryRead(IRQ_BRK_VECTOR_LOW) + (MemoryRead(IRQ_BRK_VECTOR_HIGH) << 8);
-    P |= INTERRUPT_DISABLE_FLAG;
+    if ((P & INTERRUPT_DISABLE_FLAG) == 0) {
+        StackPush((nes_byte) ((PC+1) >> 8));
+        StackPush((nes_byte) (PC+1));
+        P |= B_FLAG_INST;
+        StackPush(P);
+        PC = MemoryRead(IRQ_BRK_VECTOR_LOW) + (MemoryRead(IRQ_BRK_VECTOR_HIGH) << 8);
+        P |= INTERRUPT_DISABLE_FLAG;
+    }
 }
 
 void CPU::ClearFlag(nes_byte flag) {

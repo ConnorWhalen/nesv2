@@ -6,6 +6,8 @@
 
 #include "M2.h"
 
+#include "../PartUtilities.h"
+
 #include <iomanip>
 #include <sstream>
 
@@ -27,8 +29,15 @@ std::vector<OutputData>* M2::Serialize() {
     std::stringstream ss;
     ss << std::hex << this->bank;
     outputData.body = ss.str();
+
+    std::stringstream romDumpStream;
+    nes_byte dump[0x1000];
+    for (int i = 0; i < 0x100; i++) dump[i] = prgBytes[i + (MAPPER2_BANK_SIZE * 7)];
+    PartUtilities::serializeBytes(romDumpStream, dump, 0x100);
+
     auto outputDatas = new std::vector<OutputData>();
     outputDatas->push_back(outputData);
+    outputDatas->push_back({"M2 ROM DUMP", romDumpStream.str()});
     return outputDatas;
 }
 
@@ -45,10 +54,12 @@ nes_byte M2::DoRead(nes_address address) {
 }
 
 void M2::DoWrite(nes_address address, nes_byte value) {
+    // printf("M2 WRITE! %x : %x\n", address, value);
     this->bank = value%8;
 }
 
 nes_byte M2::DoChrRead(nes_address address) {
+    // printf("M2 CHR READ! %x\n", address);
     return chr[address];
 }
 

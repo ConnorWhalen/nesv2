@@ -34,6 +34,8 @@ public:
 
     virtual nes_byte Read(nes_address address) { return 0; };
     virtual void Write(nes_address address, nes_byte value) {}
+    
+    int CYCLES_PER_STEP = 0;
 protected:
     int step = 0;
     int STEPS_PER_TICK = 0;

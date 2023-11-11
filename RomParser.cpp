@@ -12,13 +12,13 @@
 
 namespace RomParser {
 
-RomData *parse(const std::string &filename) {
+RomData parse(const std::string &filename) {
     char inChar;
     std::ifstream inFile;
     inFile.open("roms/" + filename);
     if (!inFile.is_open()) {
         std::cout << "could not open rom file " << filename << ". Exiting\n";
-        return nullptr;
+        return RomData{};
     }
     std::vector<unsigned char> headerBytes;
     int i = 0;
@@ -28,7 +28,7 @@ RomData *parse(const std::string &filename) {
     }
     if (headerBytes.size() < 16) {
         std::cout << "ERROR: Could not read rom file header. Exiting";
-        return nullptr;
+        return RomData{};
     }
 
     unsigned short programRomPageCount = headerBytes[4];
@@ -72,7 +72,7 @@ RomData *parse(const std::string &filename) {
         chrBytes->push_back(inChar);
     }
     inFile.close();
-    return new RomData{
+    return RomData{
             programRomPageCount,
             characterRomPageCount,
             mapper,
@@ -89,18 +89,18 @@ RomData *parse(const std::string &filename) {
     };
 }
 
-std::string serialize(RomData *romData) {
+std::string serialize(const RomData &romData) {
     std::stringstream stream;
-    stream << "Program ROM page count: " << romData->programRomPageCount << "\n";
-    stream << "Character ROM page count: " << romData->characterRomPageCount << "\n";
-    stream << "Mapper id: " << romData->mapper << "\n";
-    stream << "Four screen mode: " << romData->fourScreenMode << "\n";
-    stream << "Trainer: " << romData->trainer << "\n";
-    stream << "Battery-backed RAM: " << romData->batteryBackedRam << "\n";
-    stream << "Mirroring: " << romData->mirroring << "\n";
-    stream << "NES2 mode: " << romData->nes2Mode << "\n";
-    stream << "Playchoice10: " << romData->playchoice10 << "\n";
-    stream << "vsUnisystem: " << romData->vsUnisystem;
+    stream << "Program ROM page count: " << romData.programRomPageCount << "\n";
+    stream << "Character ROM page count: " << romData.characterRomPageCount << "\n";
+    stream << "Mapper id: " << romData.mapper << "\n";
+    stream << "Four screen mode: " << romData.fourScreenMode << "\n";
+    stream << "Trainer: " << romData.trainer << "\n";
+    stream << "Battery-backed RAM: " << romData.batteryBackedRam << "\n";
+    stream << "Mirroring: " << romData.mirroring << "\n";
+    stream << "NES2 mode: " << romData.nes2Mode << "\n";
+    stream << "Playchoice10: " << romData.playchoice10 << "\n";
+    stream << "vsUnisystem: " << romData.vsUnisystem;
     return stream.str();
 }
 

@@ -15,8 +15,8 @@ TEST_CASE("MAPPER 0") {
     auto romBytes = new std::vector<nes_byte>(MAPPER0_SIZE);
     auto cartRAM = new unsigned char[CART_RAM_SIZE];
     auto chrBytes = new std::vector<nes_byte>(MAPPER_CHR_REGION_SIZE);
-    for (nes_byte b : *romBytes) b = rand();
-    M0 mapper(romBytes, cartRAM, chrBytes);
+    for (nes_byte &b : *romBytes) b = rand();
+    M0 mapper(*romBytes, cartRAM, *chrBytes);
 
     SECTION("MAPPER 0 READ") {
         for (int i = 0; i < MAPPER0_SIZE; i++) {
@@ -32,7 +32,7 @@ TEST_CASE("MAPPER 0") {
 TEST_CASE("MAPPER 2") {
     auto romBytes = new std::vector<nes_byte>(MAPPER2_SIZE);
     auto chrBytes = new std::vector<nes_byte>(MAPPER_CHR_REGION_SIZE);
-    for (nes_byte b : *romBytes) b = rand();
+    for (nes_byte &b : *romBytes) b = rand();
     M2 mapper(romBytes, chrBytes);
 
     SECTION("BANK 7 READ") {

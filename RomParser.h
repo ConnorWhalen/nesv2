@@ -32,8 +32,8 @@ struct RomData {
     std::vector<unsigned char> *chrBytes;
 };
 
-RomData* parse(const std::string &fileName);
-std::string serialize(RomData *romData);
+RomData parse(const std::string &fileName);
+std::string serialize(const RomData &romData);
 
 }
 
