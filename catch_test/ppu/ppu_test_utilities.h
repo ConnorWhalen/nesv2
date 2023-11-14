@@ -13,4 +13,6 @@
 
 std::string getRegisterString(nes_byte ppuStatus, nes_byte ppuCtrl, nes_byte ppuMask, nes_byte oamAddr, nes_byte ppuScroll, nes_byte ppuData);
 
+void write_ppu_addr(PPU &ppu, nes_address address, bool reading);
+
 #endif //NESV2_PPU_TEST_UTILITIES_H

@@ -20,4 +20,16 @@ void serializeBytes(std::stringstream &stream, const nes_byte bytes[], int size)
     }
 }
 
+
+void serializeUint32s(std::stringstream &stream, const Uint32 ints[], int size){
+    int lines = size/LINE_WIDTH;
+    for (int i = 0; i < lines; i++) {
+        stream << std::setfill('0') << std::setw(4) << std::hex << i*LINE_WIDTH << ": ";
+        for (int j = 0; j < LINE_WIDTH; j++) {
+            stream << std::setfill('0') << std::setw(8) << std::hex << int(ints[i*LINE_WIDTH + j]) << " ";
+        }
+        stream << "\n";
+    }
+}
+
 }

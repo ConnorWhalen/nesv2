@@ -9,7 +9,7 @@
 #include <iomanip>
 #include <sstream>
 
-CPU::CPU(Mapper &mapper, PPU &ppu) 
+CPU::CPU(Mapper &mapper, PPU &ppu, bool debugOutput) 
     : mapper(mapper), ppu(ppu)
 {
     // http://wiki.nesdev.com/w/index.php/CPU
@@ -18,9 +18,13 @@ CPU::CPU(Mapper &mapper, PPU &ppu)
     this->Reset();
     // this->PC = 0xC000; // for nestest.nes
     for (int i = 0; i < RAM_SIZE; i++) this->RAM[i] = 0;
+
+    this->debugOutput = debugOutput;
 }
 
 std::vector<OutputData>* CPU::Serialize() {
+	if (!debugOutput) return new std::vector<OutputData>();
+
     std::stringstream registerStream;
     registerStream << std::setfill('0') << std::setw(2) << std::hex << int(A) << " "
                    << std::setfill('0') << std::setw(2) << std::hex << int(X) << " "

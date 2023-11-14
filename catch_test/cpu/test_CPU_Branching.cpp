@@ -20,7 +20,7 @@ TEST_CASE("CPU branching") {
     auto chrBytes = new std::vector<nes_byte>(MAPPER_CHR_REGION_SIZE);
 
     NullDisplay display;
-    PPU ppu(display, false, false);
+    PPU ppu(display, false, false, true);
 
     SECTION("JMP ABS") {
         nes_address program_start = 0x8000;
@@ -39,8 +39,8 @@ TEST_CASE("CPU branching") {
         relativeRomWrite(romBytes, program_index++, 0x28);
         relativeRomWrite(romBytes, program_index++, 0x06);
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 10; i++) {
             cpu.Step();
@@ -82,8 +82,8 @@ TEST_CASE("CPU branching") {
         relativeRomWrite(romBytes, program_index++, 0x28);
         relativeRomWrite(romBytes, program_index++, 0x06);
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 24; i++) {
             cpu.Step();
@@ -125,8 +125,8 @@ TEST_CASE("CPU branching") {
         relativeRomWrite(romBytes, program_index++, 0xFF);
         relativeRomWrite(romBytes, program_index++, 0x06);
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 24; i++) {
             cpu.Step();
@@ -157,8 +157,8 @@ TEST_CASE("CPU branching") {
         program_index += 0x7F;
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 15; i++) {
             cpu.Step();
@@ -188,8 +188,8 @@ TEST_CASE("CPU branching") {
         program_index += 0x7F;
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 15; i++) {
             cpu.Step();
@@ -220,8 +220,8 @@ TEST_CASE("CPU branching") {
         program_index += 0x7F;
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 15; i++) {
             cpu.Step();
@@ -254,8 +254,8 @@ TEST_CASE("CPU branching") {
         program_index += 0x7F;
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 17; i++) {
             cpu.Step();
@@ -288,8 +288,8 @@ TEST_CASE("CPU branching") {
 
         ram[0x0728] = 0x40; // RTI
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 13; i++) {
             cpu.Step();
@@ -343,8 +343,8 @@ TEST_CASE("CPU branching") {
 
         ram[0x0728] = 0x40; // RTI
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 6; i++) {
             cpu.Step();
@@ -399,8 +399,8 @@ TEST_CASE("CPU branching") {
         ram[0x01FD] = 0x80;
         ram[0x01FC] = 0x07;
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 7; i++) {
             cpu.Step();

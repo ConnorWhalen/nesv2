@@ -74,7 +74,7 @@ enum class OPCODE {
 
 class CPU : public Part {
 public:
-    CPU(Mapper &mapper, PPU &ppu);
+    CPU(Mapper &mapper, PPU &ppu, bool debugOutput);
     std::vector<OutputData>* Serialize() override;
     virtual nes_byte Read(nes_address address) override;
     virtual void Write(nes_address address, nes_byte value) override;
@@ -98,6 +98,8 @@ private:
     PPU &ppu;
     nes_byte RAM[RAM_SIZE];
     int wait_steps;
+
+    bool debugOutput;
 
     void StackPush(nes_byte value);
     nes_byte StackPull();

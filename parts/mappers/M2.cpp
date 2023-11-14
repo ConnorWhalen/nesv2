@@ -11,7 +11,7 @@
 #include <iomanip>
 #include <sstream>
 
-M2::M2(std::vector<unsigned char> *romBytes, std::vector<unsigned char> *chrBytes) {
+M2::M2(std::vector<unsigned char> *romBytes, std::vector<unsigned char> *chrBytes, bool debugOutput) {
     for (int i = 0; i < MAPPER2_SIZE; i++) {
         prgBytes[i] = (*romBytes)[i];
     }
@@ -21,9 +21,13 @@ M2::M2(std::vector<unsigned char> *romBytes, std::vector<unsigned char> *chrByte
         }
     }
     this->bank = 0;
+
+    this->debugOutput = debugOutput;
 }
 
 std::vector<OutputData>* M2::Serialize() {
+	if (!debugOutput) return new std::vector<OutputData>();
+
     OutputData outputData;
     outputData.title = "MAPPER 2 BANK NUMBER";
     std::stringstream ss;

@@ -41,7 +41,11 @@ public:
             const std::string& displayType,
             const std::string& speakersType,
             Input *inputDevice,
-            const RomParser::RomData &romData
+            const RomParser::RomData &romData,
+            bool mapperOutput,
+            bool cpuOutput,
+            bool ppuOutput,
+            bool displayOutput
     );
 };
 

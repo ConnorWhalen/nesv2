@@ -111,8 +111,15 @@ int main(int argc, char *argv[]) {
             config.Get("speakers_type"),
 //            touchInput,
             keyboard,
-            romData
+            romData,
+            config.Get("mapper_output") == "true",
+            config.Get("cpu_output") == "true",
+            config.Get("ppu_output") == "true",
+            config.Get("display_output") == "true"
     );
+    printf("MAPPER OUTPUT: %s\n", config.Get("mapper_output").c_str());
+    printf("CPU OUTPUT: %s\n", config.Get("cpu_output").c_str());
+    printf("PPU OUTPUT: %s\n", config.Get("ppu_output").c_str());
 
     SDL_Color Red = {255, 80, 80};
     SDL_Color White = {255, 255, 255};
@@ -196,7 +203,7 @@ int main(int argc, char *argv[]) {
                     }
                 }
             }
-            parts->ppu->dumpPatternTable();
+            // parts->ppu->dumpPatternTable();
 
             gameArea->Flip(parts->display->GetPixels(), NES_WIDTH, NES_HEIGHT);
 

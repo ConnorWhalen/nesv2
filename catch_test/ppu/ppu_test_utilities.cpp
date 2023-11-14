@@ -19,3 +19,14 @@ std::string getRegisterString(nes_byte ppuStatus, nes_byte ppuCtrl, nes_byte ppu
                    << std::setfill('0') << std::setw(2) << std::hex << int(ppuData);
     return registerStream.str();
 }
+
+void write_ppu_addr(PPU &ppu, nes_address address, bool reading) {
+        ppu.Read(2);
+
+        ppu.Write(6, address / 0x100);
+        ppu.Write(6, address & 0x100);
+
+        if (reading) {
+            ppu.Read(7);
+        }
+}

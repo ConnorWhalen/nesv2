@@ -11,7 +11,7 @@
 
 
 M1::M1(std::vector<unsigned char> *romBytes, const unsigned char *cartRAM,
-       std::vector<unsigned char> *chrBytes) {
+       std::vector<unsigned char> *chrBytes, bool debugOutput) {
     for (int i = 0; i < romBytes->size(); i++) {
         prgRom[i] = (*romBytes)[i];
     }
@@ -28,9 +28,13 @@ M1::M1(std::vector<unsigned char> *romBytes, const unsigned char *cartRAM,
     this->controlReg = 0x0C;
     this->chrBankCount = chrBytes->size()/MAPPER1_CHR_BANK_SIZE;
     this->ramEnable = true;
+
+    this->debugOutput = debugOutput;
 }
 
 std::vector<OutputData>* M1::Serialize() {
+	if (!debugOutput) return new std::vector<OutputData>();
+
     std::stringstream ss;
     ss << std::hex << this->prgRomBank1 << " " << this->prgRomBank2;
 

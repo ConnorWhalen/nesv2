@@ -10,7 +10,7 @@
 #include <sstream>
 
 M0::M0(const std::vector<unsigned char> &romBytes, const unsigned char *cartRAM,
-       const std::vector<unsigned char> &chrBytes) {
+       const std::vector<unsigned char> &chrBytes, bool debugOutput) {
     int s = romBytes.size();
     for (int i = 0; i < MAPPER0_SIZE; i++) {
         prgRom[i] = romBytes[i % s];
@@ -21,9 +21,13 @@ M0::M0(const std::vector<unsigned char> &romBytes, const unsigned char *cartRAM,
     for (int i = 0; i < MAPPER_CHR_REGION_SIZE; i++) {
         chr[i] = chrBytes[i % s];
     }
+
+    this->debugOutput = debugOutput;
 }
 
 std::vector<OutputData>* M0::Serialize() {
+	if (!debugOutput) return new std::vector<OutputData>();
+
     int cols = 32;
     int rows = MAPPER0_SIZE/cols/32;
     std::stringstream stream;

@@ -23,13 +23,14 @@ constexpr nes_address PALETTE_INDICES_START = 0x3F00;
 class PPU : public Part {
 public:
     virtual std::vector<OutputData>* Serialize() override;
-    PPU(Display &display, bool mirroring, bool fourScreenMode);
+    PPU(Display &display, bool mirroring, bool fourScreenMode, bool debugOutput);
     virtual nes_byte Read(nes_address address) override;
     virtual void Write(nes_address address, nes_byte value) override;
     virtual void Step() override;
     virtual bool DoNMI();
     virtual void OAMDMA(nes_byte value, Part* cpu);
     void dumpPatternTable();
+
 private:
     Display &display;
 
@@ -71,10 +72,14 @@ private:
     nes_address vramAddr;
     nes_address tempVramAddr;
 
+    bool debugOutput;
+
     nes_byte currentTiles[24];
     nes_byte currentSprites[0x20];
     nes_byte spriteTiles[0x10];
 
+    nes_byte ppuValueAt(nes_address address);
+    void setPPUValueAt(nes_address address, nes_byte value);
     void fetchNextTile();
     void fetchNextSprites();
     void evaluateSprites();
@@ -84,8 +89,6 @@ private:
     void incYScroll();
     nes_byte nameTableValueAt(nes_address address);
     void setNameTableValueAt(nes_address address, nes_byte value);
-    nes_byte ppuValueAt(nes_address address);
-    void setPPUValueAt(nes_address address, nes_byte value);
 };
 
 #endif //NESV2_PPU_H

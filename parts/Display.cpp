@@ -6,13 +6,27 @@
 
 #include "Colour.h"
 #include "Display.h"
+#include "PartUtilities.h"
 
-Display::Display() {
+Display::Display(bool debugOutput) {
     pixels = new Uint32[NES_WIDTH*NES_HEIGHT];
     for (int i = 0; i < NES_WIDTH*NES_HEIGHT; i++) pixels[i] = 0;
 	blueEmphasis = false;
 	greenEmphasis = false;
 	redEmphasis = false;
+
+	this->debugOutput = debugOutput;
+}
+
+std::vector<OutputData>* Display::Serialize() {
+	if (!debugOutput) return new std::vector<OutputData>();
+
+    std::stringstream pixelsStream;
+    PartUtilities::serializeUint32s(pixelsStream, pixels, NES_WIDTH*NES_HEIGHT);
+
+    return new std::vector<OutputData> {
+        {"DISPLAY PIXELS", pixelsStream.str()},
+    };
 }
 
 void Display::SetPixelFormat(SDL_Texture *gameTexture) {

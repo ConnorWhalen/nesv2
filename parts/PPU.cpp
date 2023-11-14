@@ -11,6 +11,8 @@
 #include "PartUtilities.h"
 
 std::vector<OutputData>* PPU::Serialize() {
+	if (!debugOutput) return new std::vector<OutputData>();
+
     std::stringstream registerStream;
     registerStream << std::setfill('0') << std::setw(2) << std::hex << int(ppuCtrl) << " "
                    << std::setfill('0') << std::setw(2) << std::hex << int(ppuMask) << " "
@@ -47,7 +49,7 @@ std::vector<OutputData>* PPU::Serialize() {
     };
 }
 
-PPU::PPU(Display &display, bool mirroring, bool fourScreenMode)
+PPU::PPU(Display &display, bool mirroring, bool fourScreenMode, bool debugOutput)
 	: display(display)
 {
 	// http://wiki.nesdev.com/w/index.php/Cycle_reference_chart#Clock_rates
@@ -96,6 +98,8 @@ PPU::PPU(Display &display, bool mirroring, bool fourScreenMode)
 			verticalMirroring = false;
 		}
 	}
+
+	this->debugOutput = debugOutput;
 }
 
 nes_byte PPU::Read(nes_address address) {
@@ -262,7 +266,7 @@ void PPU::Step() {
 			if (clockTick == 1) ppuStatus &= 0x1f; // clear flags
 			else if ((ppuMask_showBackground || ppuMask_showSprites) && clockTick >= 280 && clockTick < 305) vramAddr = (vramAddr & 0x041f) + (tempVramAddr & 0x7be0); // reset y scroll
 			else if (clockTick == 339 && oddFrame) clockTick++; // Skip last tick
-		} else if (scanline < 240) { // visible lines
+		} else if (clockTick < 257 && clockTick > 0) { // visible lines
 			DrawPixel(clockTick-1);
 		}
 	} else if (scanline < 241) { // postrender
@@ -365,9 +369,9 @@ void PPU::DrawPixel(nes_byte x) {
 	bool showSprites = ppuMask_showSprites && (x > 7 || ppuMask_showSpritesLeft8);
 	nes_byte backgroundColor = currentTiles[(x % 8) + fineXScroll];
 	// transparent
-	// SetDisplayPixel/(x, scanline);
+	SetDisplayPixel(x, scanline);
 	if (showBackground) {
-		// SetDisplayPixel(x, scanline, backgroundColor);
+		SetDisplayPixel(x, scanline, backgroundColor);
 	}
 	if (showSprites) {
 		nes_byte tile0 = 0;
@@ -389,7 +393,7 @@ void PPU::DrawPixel(nes_byte x) {
 				// colourAddress += (tile1 >> (7 - xOffset)) & 0x02; // I don't think this is supposed to be here
 				colourAddress += attribute << 2;
 				if (colourAddress % 4 != 0) {
-					// SetDisplayPixel(x, scanline, colourAddress | 0x10);
+					SetDisplayPixel(x, scanline, colourAddress | 0x10);
 					if (i == 0 && x < 255 && hasSpriteZero && showBackground && backgroundColor % 4 != 0) ppuStatus |= 0x40;
 					break;
 				}
@@ -399,7 +403,13 @@ void PPU::DrawPixel(nes_byte x) {
 }
 
 void PPU::SetDisplayPixel(int x, int y, nes_byte colourAddress) {
-	nes_byte colourValue = paletteIndices[colourAddress] % 0x3F;
+	nes_byte colourValue = 0;
+	if (colourAddress % 4 == 0) {
+		colourValue = paletteIndices[0] % 0x3F;
+	} else  {
+		colourValue = paletteIndices[colourAddress] % 0x3F;
+	}
+
 	if (ppuMask_greyscale) colourValue &= 0x30;
 	display.SetPixel(x, y, colourValue);
 }

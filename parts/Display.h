@@ -13,11 +13,9 @@
 
 class Display : public Part {
 public:
-    virtual std::vector<OutputData>* Serialize() override {
-        return new std::vector<OutputData>();
-    };
+    virtual std::vector<OutputData>* Serialize() override;
 
-    Display();
+    Display(bool debugOutput);
 
     virtual void SetPixelFormat(SDL_Texture *gameTexture);
     virtual void SetColourEmphasis(bool r, bool g, bool b);
@@ -30,6 +28,8 @@ private:
     bool blueEmphasis;
     bool greenEmphasis;
     bool redEmphasis;
+
+    bool debugOutput;
 };
 
 #endif //NESV2_DISPLAY_H

@@ -19,27 +19,31 @@ Parts* PartAssembler::Assemble(
         const std::string& displayType,
         const std::string& speakersType,
         Input *inputDevice,
-        const RomParser::RomData &romData
+        const RomParser::RomData &romData,
+        bool mapperOutput,
+        bool cpuOutput,
+        bool ppuOutput,
+        bool displayOutput
 ) {
     auto parts = new Parts {};
     if (romData.mapper == 0) {
-        parts->mapper = new M0(*romData.romBytes, romData.cartRAM, *romData.chrBytes);
+        parts->mapper = new M0(*romData.romBytes, romData.cartRAM, *romData.chrBytes, mapperOutput);
     } else if (romData.mapper == 1) {
-        parts->mapper = new M1(romData.romBytes, romData.cartRAM, romData.chrBytes);
+        parts->mapper = new M1(romData.romBytes, romData.cartRAM, romData.chrBytes, mapperOutput);
     } else if (romData.mapper == 2) {
-        parts->mapper = new M2(romData.romBytes, romData.chrBytes);
+        parts->mapper = new M2(romData.romBytes, romData.chrBytes, mapperOutput);
     } else {
         printf("unknown mapper type %d\n", romData.mapper);
     }
 
     if (displayType == "Display") {
-        parts->display = new Display();
+        parts->display = new Display(displayOutput);
     } else {
         printf("unknown display type %s\n", displayType.c_str());
     }
 
     if (ppuType == "PPU") {
-        parts->ppu = new PPU(*parts->display, romData.mirroring, romData.fourScreenMode);
+        parts->ppu = new PPU(*parts->display, romData.mirroring, romData.fourScreenMode, ppuOutput);
     } else if (ppuType == "NullPPU") {
         parts->ppu = new NullPPU(*parts->display, romData.mirroring, romData.fourScreenMode);
     } else {
@@ -47,7 +51,7 @@ Parts* PartAssembler::Assemble(
     }
 
     if (cpuType == "CPU") {
-        parts->cpu = new CPU(*parts->mapper, *parts->ppu);
+        parts->cpu = new CPU(*parts->mapper, *parts->ppu, cpuOutput);
     } else {
         printf("unknown cpu type %s\n", cpuType.c_str());
     }

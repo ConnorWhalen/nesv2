@@ -23,7 +23,7 @@ constexpr nes_address MAPPER1_PRG_REGION_START = 0xE000;
 class M1 : public Mapper {
 public:
     M1(std::vector<unsigned char> *romBytes, const unsigned char*cartRAM,
-       std::vector<unsigned char> *chrBytes);
+       std::vector<unsigned char> *chrBytes, bool debugOutput);
     std::vector<OutputData>* Serialize() override;
     nes_byte DoRead(nes_address address) override;
     void DoWrite(nes_address address, nes_byte value) override;
@@ -45,6 +45,8 @@ private:
     int chrBank1;
     int chrBank2;
     int chrBankCount;
+
+    bool debugOutput;
 };
 
 #endif //NESV2_M1_H

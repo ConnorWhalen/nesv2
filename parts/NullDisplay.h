@@ -24,6 +24,13 @@ public:
     void SetPixel(int x, int y, unsigned char colourValue) override;
     Uint32* GetPixels() override;
 private:
+    Uint32* pixels;
+    SDL_PixelFormat *pixelFormat;
+    bool blueEmphasis;
+    bool greenEmphasis;
+    bool redEmphasis;
+
+    
 };
 
 #endif //NESV2_NULLDISPLAY_H

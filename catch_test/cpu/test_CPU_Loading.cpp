@@ -20,7 +20,7 @@ TEST_CASE("CPU loading") {
     auto chrBytes = new std::vector<nes_byte>(MAPPER_CHR_REGION_SIZE);
 
     NullDisplay display;
-    PPU ppu(display, false, false);
+    PPU ppu(display, false, false, true);
 
     SECTION("LDA IMM AND FLAGS") {
         nes_address program_start = 0x8000;
@@ -32,8 +32,8 @@ TEST_CASE("CPU loading") {
         relativeRomWrite(romBytes, program_index++, 0xA9); // LDA imm
         relativeRomWrite(romBytes, program_index++, 0x80);
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         cpu.Step();
 
@@ -67,8 +67,8 @@ TEST_CASE("CPU loading") {
         relativeRomWrite(romBytes, program_index++, 0x24);
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 9; i++) {
             cpu.Step();
@@ -100,8 +100,8 @@ TEST_CASE("CPU loading") {
         relativeRomWrite(romBytes, program_index++, 0x24);
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 13; i++) {
             cpu.Step();
@@ -132,8 +132,8 @@ TEST_CASE("CPU loading") {
         relativeRomWrite(romBytes, program_index++, 0x03);
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 11; i++) {
             cpu.Step();
@@ -174,8 +174,8 @@ TEST_CASE("CPU loading") {
         relativeRomWrite(romBytes, program_index++, 0x04);
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 24; i++) {
             cpu.Step();
@@ -216,8 +216,8 @@ TEST_CASE("CPU loading") {
         relativeRomWrite(romBytes, program_index++, 0x04);
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 24; i++) {
             cpu.Step();
@@ -259,8 +259,8 @@ TEST_CASE("CPU loading") {
         relativeRomWrite(romBytes, program_index++, 0xF5);
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 27; i++) {
             cpu.Step();
@@ -317,8 +317,8 @@ TEST_CASE("CPU loading") {
         relativeRomWrite(romBytes, program_index++, 0x07);
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 48; i++) {
             cpu.Step();
@@ -350,8 +350,8 @@ TEST_CASE("CPU loading") {
         relativeRomWrite(romBytes, program_index++, 0x24);
         relativeRomWrite(romBytes, program_index++, 0xEA); // NOP
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 13; i++) {
             cpu.Step();

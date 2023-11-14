@@ -20,11 +20,11 @@ TEST_CASE("CPU functionality") {
     auto chrBytes = new std::vector<nes_byte>(MAPPER_CHR_REGION_SIZE);
 
     NullDisplay display;
-    PPU ppu(display, false, false);
+    PPU ppu(display, false, false, true);
 
     SECTION("CPU INITIALIZATION") {
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         auto output = cpu.Serialize();
         REQUIRE(output->at(0).body == getRegisterString(
@@ -46,8 +46,8 @@ TEST_CASE("CPU functionality") {
         relativeRomWrite(romBytes, program_index++, 0x08); // PHP
         relativeRomWrite(romBytes, program_index++, 0x38); // SEC
 
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         for (int i = 0; i < 9; i++) {
             cpu.Step();
@@ -75,8 +75,8 @@ TEST_CASE("CPU functionality") {
             relativeRomWrite(romBytes, program_index++, (nes_byte) (i & 0xFF));
             relativeRomWrite(romBytes, program_index++, (nes_byte) (i >> 8));
         }
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         auto output = cpu.Serialize();
         REQUIRE(output->at(0).body == getRegisterString(
@@ -115,8 +115,8 @@ TEST_CASE("CPU functionality") {
             relativeRomWrite(romBytes, program_index++, (nes_byte) ((i+1) >> 8));
             ram[i+1] = ram[0];
         }
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         auto output = cpu.Serialize();
         REQUIRE(output->at(0).body == getRegisterString(
@@ -148,8 +148,8 @@ TEST_CASE("CPU functionality") {
             relativeRomWrite(romBytes, program_index++, (nes_byte) ((i*RAM_SIZE + i) & 0xFF));
             relativeRomWrite(romBytes, program_index++, (nes_byte) ((i*RAM_SIZE + i) >> 8));
         }
-        M0 mapper(*romBytes, cartRAM, *chrBytes);
-        CPU cpu(mapper, ppu);
+        M0 mapper(*romBytes, cartRAM, *chrBytes, true);
+        CPU cpu(mapper, ppu, true);
 
         auto output = cpu.Serialize();
         REQUIRE(output->at(0).body == getRegisterString(

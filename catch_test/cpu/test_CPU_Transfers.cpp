@@ -20,7 +20,7 @@ TEST_CASE("CPU transfers") {
     auto chrBytes = new std::vector<nes_byte>(MAPPER_CHR_REGION_SIZE);
 
     NullDisplay display;
-    PPU ppu(display, false, false);
+    PPU ppu(display, false, false, true);
 
     SECTION("Stack Operations") {
         

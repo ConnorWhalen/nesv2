@@ -4,7 +4,7 @@ std::vector<OutputData>* NullPPU::Serialize() {
 	return new std::vector<OutputData>();
 }
 
-NullPPU::NullPPU(Display &display, bool mirroring, bool fourScreenMode) : PPU(display, mirroring, fourScreenMode){
+NullPPU::NullPPU(Display &display, bool mirroring, bool fourScreenMode) : PPU(display, mirroring, fourScreenMode, false){
 	// pass
 }
 
